@@ -1,9 +1,9 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "vite",
-  "installCommand": "corepack enable && pnpm --dir OneDrive/Imagens/Dot-Explorer install --frozen-lockfile",
-  "buildCommand": "pnpm --dir OneDrive/Imagens/Dot-Explorer --filter @workspace/santa-print build",
-  "outputDirectory": "OneDrive/Imagens/Dot-Explorer/artifacts/santa-print/dist",
+  "installCommand": "corepack enable && cd ../.. && pnpm install --frozen-lockfile",
+  "buildCommand": "cd ../.. && pnpm --filter @workspace/santa-print build",
+  "outputDirectory": "dist",
   "rewrites": [
     {
       "source": "/((?!api/).*)",
