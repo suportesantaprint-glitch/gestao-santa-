@@ -7,8 +7,8 @@ import { Shell } from '@/components/layout/Shell';
 import { Dashboard } from '@/pages/Dashboard';
 import { Chamadas } from '@/pages/Chamadas';
 import { Pecas } from '@/pages/Pecas';
-import { Pedidos } from '@/pages/Pedidos';
-import { Contratos } from '@/pages/Contratos';
+import { MaquinasClientes } from '@/pages/MaquinasClientes';
+import { Tecnicos } from '@/pages/Tecnicos';
 import { Relatorios } from '@/pages/Relatorios';
 
 function NotFound() {
@@ -25,7 +25,7 @@ const queryClient = new QueryClient({
     queries: {
       refetchOnWindowFocus: false,
       retry: 1,
-      staleTime: 5 * 60 * 1000, // 5 mins
+      staleTime: 5 * 60 * 1000,
     },
   },
 });
@@ -37,8 +37,10 @@ function Router() {
         <Route path="/" component={Dashboard} />
         <Route path="/chamadas" component={Chamadas} />
         <Route path="/pecas" component={Pecas} />
-        <Route path="/pedidos" component={Pedidos} />
-        <Route path="/contratos" component={Contratos} />
+        <Route path="/maquinas" component={MaquinasClientes} />
+        <Route path="/tecnicos" component={Tecnicos} />
+        <Route path="/pedidos" component={MaquinasClientes} />
+        <Route path="/contratos" component={Tecnicos} />
         <Route path="/relatorios" component={Relatorios} />
         <Route component={NotFound} />
       </Switch>
