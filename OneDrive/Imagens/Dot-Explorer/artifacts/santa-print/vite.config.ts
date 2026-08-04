@@ -5,7 +5,7 @@ import { defineConfig } from 'vite';
 
 import runtimeErrorOverlay from '@replit/vite-plugin-runtime-error-modal';
 
-const rawPort = process.env.PORT;
+const port = Number(process.env.PORT || 5173);
 
 if (!rawPort) {
   throw new Error(
