@@ -1,21 +1,21 @@
 import * as React from "react"
 import { Link, useLocation } from "wouter"
 import { cn } from "@/lib/utils"
-import { 
-  LayoutDashboard, 
-  Wrench, 
-  Package, 
-  ShoppingCart, 
-  FileText, 
-  BarChart3
+import {
+  LayoutDashboard,
+  Wrench,
+  Package,
+  Building2,
+  UsersRound,
+  BarChart3,
 } from "lucide-react"
 
 const navItems = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/chamadas", label: "Chamadas", icon: Wrench },
   { href: "/pecas", label: "Peças", icon: Package },
-  { href: "/pedidos", label: "Pedidos", icon: ShoppingCart },
-  { href: "/contratos", label: "Contratos", icon: FileText },
+  { href: "/maquinas", label: "Máquinas por Cliente", icon: Building2 },
+  { href: "/tecnicos", label: "Técnicos", icon: UsersRound },
   { href: "/relatorios", label: "Relatórios", icon: BarChart3 },
 ]
 
@@ -38,16 +38,16 @@ export function Shell({ children }: { children: React.ReactNode }) {
             {navItems.map((item) => {
               const Icon = item.icon
               const isActive = location === item.href || (item.href !== "/" && location.startsWith(item.href))
-              
+
               return (
                 <Link
                   key={item.href}
                   href={item.href}
                   className={cn(
                     "flex items-center gap-3 rounded-md px-3 py-2.5 transition-all hover:text-sidebar-primary-foreground",
-                    isActive 
-                      ? "bg-sidebar-accent text-sidebar-accent-foreground" 
-                      : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50"
+                    isActive
+                      ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                      : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50",
                   )}
                 >
                   <Icon className="h-4 w-4" />
@@ -69,7 +69,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
           </div>
         </div>
       </aside>
-      
+
       <div className="flex flex-col md:pl-64 flex-1">
         <header className="sticky top-0 z-10 flex h-14 items-center gap-4 border-b bg-background px-6 md:hidden">
           <div className="flex items-center gap-2 font-bold">
@@ -79,7 +79,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
             <span>Santa Print</span>
           </div>
         </header>
-        
+
         <main className="flex-1 p-6">
           {children}
         </main>
