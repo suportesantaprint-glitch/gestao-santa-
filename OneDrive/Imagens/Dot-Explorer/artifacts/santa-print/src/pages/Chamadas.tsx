@@ -46,7 +46,7 @@ export function Chamadas() {
     window.open('/api/chamadas/exportar?' + params.toString())
   }
 
-  const handleApplyFilter = (key: string, value: string) => {
+  const handleApplyFilter = (key: keyof typeof filters, value: string) => {
     setFilter(key, value === "all" ? "" : value)
     setPage(1)
   }
