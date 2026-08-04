@@ -1,0 +1,12 @@
+{
+  "name": "gestao-santa-print",
+  "version": "1.0.0",
+  "private": true,
+  "packageManager": "pnpm@10.15.0",
+  "scripts": {
+    "install:workspace": "pnpm --dir OneDrive/Imagens/Dot-Explorer install --frozen-lockfile",
+    "dev": "pnpm --dir OneDrive/Imagens/Dot-Explorer --filter @workspace/santa-print dev",
+    "build": "pnpm --dir OneDrive/Imagens/Dot-Explorer --filter @workspace/santa-print build",
+    "typecheck": "pnpm --dir OneDrive/Imagens/Dot-Explorer --filter @workspace/santa-print typecheck"
+  }
+}
