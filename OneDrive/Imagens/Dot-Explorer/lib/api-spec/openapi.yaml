@@ -1,0 +1,520 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: Santa Print — Sistema de Controle Operacional Interno
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: dashboard
+    description: Dashboard e KPIs
+  - name: chamadas
+    description: Chamadas de suporte técnico
+  - name: pecas
+    description: Peças utilizadas nas chamadas
+  - name: pedidos
+    description: Pedidos comerciais
+  - name: contratos
+    description: Contratos de locação
+
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  # ── Dashboard ──────────────────────────────────────────────────
+  /dashboard/resumo:
+    get:
+      operationId: getDashboardResumo
+      tags: [dashboard]
+      summary: KPIs gerais do dashboard
+      parameters:
+        - name: dataInicio
+          in: query
+          schema: { type: string, format: date }
+        - name: dataFim
+          in: query
+          schema: { type: string, format: date }
+      responses:
+        "200":
+          description: KPIs
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardResumo"
+
+  /dashboard/por-status:
+    get:
+      operationId: getDashboardPorStatus
+      tags: [dashboard]
+      summary: Chamadas agrupadas por status
+      parameters:
+        - name: dataInicio
+          in: query
+          schema: { type: string, format: date }
+        - name: dataFim
+          in: query
+          schema: { type: string, format: date }
+      responses:
+        "200":
+          description: Contagem por status
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/StatusCount"
+
+  /dashboard/por-equipamento:
+    get:
+      operationId: getDashboardPorEquipamento
+      tags: [dashboard]
+      summary: Chamadas agrupadas por tipo de equipamento
+      parameters:
+        - name: dataInicio
+          in: query
+          schema: { type: string, format: date }
+        - name: dataFim
+          in: query
+          schema: { type: string, format: date }
+      responses:
+        "200":
+          description: Contagem por equipamento
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/EquipamentoCount"
+
+  /dashboard/recentes:
+    get:
+      operationId: getDashboardRecentes
+      tags: [dashboard]
+      summary: Chamadas mais recentes
+      responses:
+        "200":
+          description: Últimas chamadas
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Chamada"
+
+  # ── Chamadas ───────────────────────────────────────────────────
+  /chamadas:
+    get:
+      operationId: listChamadas
+      tags: [chamadas]
+      summary: Listar chamadas com filtros e paginação
+      parameters:
+        - name: situacao
+          in: query
+          description: "Status: Em Análise, Concluído, Cancelado, Aguardando Peça, Para Conserto"
+          schema: { type: string }
+        - name: dataInicio
+          in: query
+          schema: { type: string, format: date }
+        - name: dataFim
+          in: query
+          schema: { type: string, format: date }
+        - name: tipoEquipamento
+          in: query
+          description: "MULTIFUNCIONAL, IMPRESSORA, SCANNERS, ETIQUETA, ZEBRA"
+          schema: { type: string }
+        - name: tipoContrato
+          in: query
+          description: "Contrato, Normal"
+          schema: { type: string }
+        - name: tipoEntrada
+          in: query
+          description: "Interna, Externa"
+          schema: { type: string }
+        - name: marca
+          in: query
+          schema: { type: string }
+        - name: cidade
+          in: query
+          schema: { type: string }
+        - name: cliente
+          in: query
+          description: Busca por razao_social
+          schema: { type: string }
+        - name: tecnico
+          in: query
+          description: Busca por email_tecnico
+          schema: { type: string }
+        - name: page
+          in: query
+          schema: { type: number, default: 1 }
+        - name: limit
+          in: query
+          schema: { type: number, default: 50 }
+      responses:
+        "200":
+          description: Lista paginada de chamadas
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChamadasPaginadas"
+
+  /chamadas/{codigo}:
+    get:
+      operationId: getChamada
+      tags: [chamadas]
+      summary: Buscar chamada por código
+      parameters:
+        - name: codigo
+          in: path
+          required: true
+          schema: { type: number }
+      responses:
+        "200":
+          description: Chamada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Chamada"
+        "404":
+          description: Não encontrada
+
+  # ── Peças ──────────────────────────────────────────────────────
+  /pecas:
+    get:
+      operationId: listPecas
+      tags: [pecas]
+      summary: Listar peças utilizadas
+      parameters:
+        - name: chamadaNumero
+          in: query
+          schema: { type: number }
+        - name: descProduto
+          in: query
+          schema: { type: string }
+        - name: marca
+          in: query
+          schema: { type: string }
+        - name: dataInicio
+          in: query
+          schema: { type: string, format: date }
+        - name: dataFim
+          in: query
+          schema: { type: string, format: date }
+        - name: page
+          in: query
+          schema: { type: number, default: 1 }
+        - name: limit
+          in: query
+          schema: { type: number, default: 50 }
+      responses:
+        "200":
+          description: Lista paginada de peças
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PecasPaginadas"
+
+  # ── Pedidos ────────────────────────────────────────────────────
+  /pedidos:
+    get:
+      operationId: listPedidos
+      tags: [pedidos]
+      summary: Listar pedidos comerciais
+      parameters:
+        - name: mesAno
+          in: query
+          description: Formato MM/YYYY
+          schema: { type: string }
+        - name: cliente
+          in: query
+          schema: { type: string }
+        - name: representante
+          in: query
+          schema: { type: string }
+        - name: formaPagto
+          in: query
+          schema: { type: string }
+        - name: page
+          in: query
+          schema: { type: number, default: 1 }
+        - name: limit
+          in: query
+          schema: { type: number, default: 50 }
+      responses:
+        "200":
+          description: Lista de pedidos
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PedidosPaginados"
+
+  # ── Contratos ──────────────────────────────────────────────────
+  /contratos:
+    get:
+      operationId: listContratos
+      tags: [contratos]
+      summary: Listar contratos de locação
+      parameters:
+        - name: tipoContrato
+          in: query
+          schema: { type: string }
+        - name: page
+          in: query
+          schema: { type: number, default: 1 }
+        - name: limit
+          in: query
+          schema: { type: number, default: 50 }
+      responses:
+        "200":
+          description: Lista de contratos
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContratosPaginados"
+
+  # ── Filtros / Metadados ────────────────────────────────────────
+  /filtros/opcoes:
+    get:
+      operationId: getFiltrosOpcoes
+      tags: [chamadas]
+      summary: Valores únicos para preencher filtros (status, marcas, cidades, técnicos)
+      responses:
+        "200":
+          description: Opções de filtros
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FiltrosOpcoes"
+
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      required: [status]
+      properties:
+        status: { type: string }
+
+    # ── Dashboard ────────────────────────────────────────────────
+    DashboardResumo:
+      type: object
+      required: [total, emAnalise, concluidas, canceladas, aguardandoPeca, paraConserto, hojeAbertas, hojeFechadas]
+      properties:
+        total:          { type: number }
+        emAnalise:      { type: number }
+        concluidas:     { type: number }
+        canceladas:     { type: number }
+        aguardandoPeca: { type: number }
+        paraConserto:   { type: number }
+        hojeAbertas:    { type: number }
+        hojeFechadas:   { type: number }
+
+    StatusCount:
+      type: object
+      required: [situacao, total]
+      properties:
+        situacao: { type: string }
+        total:    { type: number }
+
+    EquipamentoCount:
+      type: object
+      required: [tipo, total]
+      properties:
+        tipo:  { type: string }
+        total: { type: number }
+
+    # ── Chamada ──────────────────────────────────────────────────
+    Chamada:
+      type: object
+      required: [codigo, situacao_zenthi, emissao, razao_social, cidade]
+      properties:
+        empresa_number:        { type: number }
+        id_sales:              { type: string }
+        cod_situacao_zenthi:   { type: number }
+        status:                { type: number }
+        situacao:              { type: string }
+        situacao_zenthi:       { type: string }
+        codigo:                { type: number }
+        valor_chamada:         { type: ["number", "null"] }
+        emissao:               { type: string }
+        encerramento:          { type: ["string", "null"] }
+        defeito_informado:     { type: ["string", "null"] }
+        defeito_verificado:    { type: ["string", "null"] }
+        cancelamento:          { type: ["string", "null"] }
+        motivo_cancelamento:   { type: ["string", "null"] }
+        data_inicio_servico:   { type: ["string", "null"] }
+        data_final_servico:    { type: ["string", "null"] }
+        observacao:            { type: ["string", "null"] }
+        servico_realizado:     { type: ["string", "null"] }
+        observacao_servico:    { type: ["string", "null"] }
+        cliente_codigo:        { type: number }
+        razao_social:          { type: string }
+        obs_cliente:           { type: ["string", "null"] }
+        cpf_cnpj:              { type: ["string", "null"] }
+        cidade:                { type: string }
+        docto_tecnico:         { type: ["string", "null"] }
+        email_tecnico:         { type: ["string", "null"] }
+        codigo_ocorrencia:     { type: ["string", "null"] }
+        descricao_ocorrencia:  { type: ["string", "null"] }
+        contrato:              { type: ["number", "null"] }
+        codigo_tipo_contrato:  { type: ["string", "null"] }
+        tipo_contrato:         { type: ["string", "null"] }
+        codigo_tipo_entrada:   { type: ["string", "null"] }
+        tipo_entrada:          { type: ["string", "null"] }
+        produto_os:            { type: ["string", "null"] }
+        marca:                 { type: ["string", "null"] }
+        modelo:                { type: ["string", "null"] }
+        numero_serie:          { type: ["string", "null"] }
+        setor:                 { type: ["string", "null"] }
+        suporte:               { type: ["string", "null"] }
+        ibge:                  { type: ["number", "null"] }
+        data_prevista:         { type: ["string", "null"] }
+        tipo_equipamento:      { type: ["number", "null"] }
+        desc_tipo_equipamento: { type: ["string", "null"] }
+        marca_codigo:          { type: ["number", "null"] }
+        setor_codigo:          { type: ["number", "null"] }
+        ativo:                 { type: ["string", "null"] }
+
+    ChamadasPaginadas:
+      type: object
+      required: [data, total, page, limit]
+      properties:
+        data:  { type: array, items: { $ref: "#/components/schemas/Chamada" } }
+        total: { type: number }
+        page:  { type: number }
+        limit: { type: number }
+
+    # ── Peça ─────────────────────────────────────────────────────
+    Peca:
+      type: object
+      required: [id_sales_peca, chamada_number, desc_produto]
+      properties:
+        empresa_number:         { type: number }
+        filial_number:          { type: number }
+        chamada_number:         { type: number }
+        data_abertura:          { type: ["string", "null"] }
+        cliente_number:         { type: ["number", "null"] }
+        situacao:               { type: ["number", "null"] }
+        data_encerramento:      { type: ["string", "null"] }
+        data_prevista:          { type: ["string", "null"] }
+        entrada:                { type: ["string", "null"] }
+        garantia:               { type: ["string", "null"] }
+        numero_os:              { type: ["string", "null"] }
+        nota_fiscal:            { type: ["number", "null"] }
+        serie:                  { type: ["string", "null"] }
+        produto_principal:      { type: ["string", "null"] }
+        descricao_equip:        { type: ["string", "null"] }
+        modelo_equip:           { type: ["string", "null"] }
+        marca_number:           { type: ["number", "null"] }
+        desc_marca:             { type: ["string", "null"] }
+        defeito_equip:          { type: ["string", "null"] }
+        defeito_verificado:     { type: ["string", "null"] }
+        servicos_realizar:      { type: ["string", "null"] }
+        obs_servicos:           { type: ["string", "null"] }
+        login_number:           { type: ["number", "null"] }
+        id_sales:               { type: ["string", "null"] }
+        produto:                { type: ["string", "null"] }
+        desc_produto:           { type: string }
+        qtdem:                  { type: ["number", "null"] }
+        preco_unitario:         { type: ["number", "null"] }
+        valor_item:             { type: ["number", "null"] }
+        valor_custo:            { type: ["number", "null"] }
+        movimentou_estoque:     { type: ["string", "null"] }
+        id_sales_peca:          { type: string }
+
+    PecasPaginadas:
+      type: object
+      required: [data, total, page, limit]
+      properties:
+        data:  { type: array, items: { $ref: "#/components/schemas/Peca" } }
+        total: { type: number }
+        page:  { type: number }
+        limit: { type: number }
+
+    # ── Pedido ───────────────────────────────────────────────────
+    Pedido:
+      type: object
+      properties:
+        empresa:          { type: ["number", "null"] }
+        pedido:           { type: ["string", "null"] }
+        nome_repres:      { type: ["string", "null"] }
+        mes_ano:          { type: ["string", "null"] }
+        cliente:          { type: ["number", "null"] }
+        nome_cliente:     { type: ["string", "null"] }
+        pedido_descricao: { type: ["string", "null"] }
+        produto:          { type: ["string", "null"] }
+        descricao:        { type: ["string", "null"] }
+        qtde:             { type: ["number", "null"] }
+        valor_bruto:      { type: ["number", "null"] }
+        valor_item:       { type: ["number", "null"] }
+        valor_desconto:   { type: ["number", "null"] }
+        valor_venda:      { type: ["number", "null"] }
+        valor_custo:      { type: ["number", "null"] }
+        margem:           { type: ["number", "null"] }
+        data_emissao:     { type: ["string", "null"] }
+        forma_pagto:      { type: ["string", "null"] }
+        prazo:            { type: ["string", "null"] }
+
+    PedidosPaginados:
+      type: object
+      required: [data, total, page, limit]
+      properties:
+        data:  { type: array, items: { $ref: "#/components/schemas/Pedido" } }
+        total: { type: number }
+        page:  { type: number }
+        limit: { type: number }
+
+    # ── Contrato ─────────────────────────────────────────────────
+    Contrato:
+      type: object
+      properties:
+        id: { type: ["number", "null"] }
+
+    ContratosPaginados:
+      type: object
+      required: [data, total, page, limit]
+      properties:
+        data:  { type: array, items: { $ref: "#/components/schemas/Contrato" } }
+        total: { type: number }
+        page:  { type: number }
+        limit: { type: number }
+
+    # ── Filtros ──────────────────────────────────────────────────
+    FiltrosOpcoes:
+      type: object
+      required: [situacoes, tiposEquipamento, marcas, cidades, tecnicos, tiposContrato, tiposEntrada]
+      properties:
+        situacoes:
+          type: array
+          items: { type: string }
+        tiposEquipamento:
+          type: array
+          items: { type: string }
+        marcas:
+          type: array
+          items: { type: string }
+        cidades:
+          type: array
+          items: { type: string }
+        tecnicos:
+          type: array
+          items: { type: string }
+        tiposContrato:
+          type: array
+          items: { type: string }
+        tiposEntrada:
+          type: array
+          items: { type: string }

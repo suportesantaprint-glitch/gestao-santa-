@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "Santa Print — Sistema Operacional"
+description = "Sistema de controle operacional interno da Santa Print. Gerencia pedidos de impressão (orçamento até entrega), cadastro de clientes, controle de produção por etapas, financeiro e pagamentos, com dashboard de visão geral das operações."
+version = "1.0.0"
+id = "artifacts/santa-print"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 19953
+
+[services.development]
+run = "pnpm --filter @workspace/santa-print run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/santa-print", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/santa-print/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "19953"
+BASE_PATH = "/"

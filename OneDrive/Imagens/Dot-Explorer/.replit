@@ -1,0 +1,27 @@
+modules = ["nodejs-24"]
+
+[deployment]
+router = "application"
+deploymentTarget = "autoscale"
+
+[deployment.postBuild]
+args = ["pnpm", "store", "prune"]
+env = { "CI" = "true" }
+
+[workflows]
+runButton = "Project"
+
+[agent]
+stack = "PNPM_WORKSPACE"
+expertMode = true
+
+[postMerge]
+path = "scripts/post-merge.sh"
+timeoutMs = 20000
+
+[userenv]
+
+[userenv.shared]
+SUPABASE_JWKS_URL = "https://vjftsovanievoxilfrkc.supabase.co/auth/v1/.well-known/jwks.json"
+SUPABASE_PUBLISHABLE_KEY = "sb_publishable_RfoJqNZoOlV4vEja3SuJDg_o_bJ-sex"
+SUPABASE_URL = "https://vjftsovanievoxilfrkc.supabase.co"
