@@ -88,6 +88,13 @@ type Filters = {
   ordenar: string
 }
 
+type DetailMode = "parts" | "returns"
+
+type TechnicianDetails = {
+  mode: DetailMode
+  technician: TecnicoResumo
+}
+
 const initialFilters: Filters = {
   busca: "",
   tecnico: "all",
@@ -114,7 +121,7 @@ function useDebouncedValue<T>(value: T, delay = 350): T {
 export function Tecnicos() {
   const [page, setPage] = useState(1)
   const [selectedTechnician, setSelectedTechnician] = useState("")
-  const [partsTechnician, setPartsTechnician] = useState<TecnicoResumo | null>(null)
+  const [details, setDetails] = useState<TechnicianDetails | null>(null)
   const [filters, setFilters] = useState<Filters>(initialFilters)
   const debouncedSearch = useDebouncedValue(filters.busca)
 
@@ -162,6 +169,11 @@ export function Tecnicos() {
   }, [data, selectedTechnician])
 
   const selected = data?.data.find((item) => item.tecnico === selectedTechnician)
+  const detailServices = details
+    ? details.technician.servicos.filter((service) =>
+        details.mode === "parts" ? service.pecas.length > 0 : service.retorno,
+      )
+    : []
 
   const updateFilter = <K extends keyof Filters>(key: K, value: Filters[K]) => {
     setFilters((current) => ({ ...current, [key]: value }))
@@ -171,6 +183,11 @@ export function Tecnicos() {
   const resetFilters = () => {
     setFilters(initialFilters)
     setPage(1)
+  }
+
+  const openDetails = (event: React.MouseEvent<HTMLButtonElement>, mode: DetailMode, technician: TecnicoResumo) => {
+    event.stopPropagation()
+    setDetails({ mode, technician })
   }
 
   return (
@@ -210,8 +227,20 @@ export function Tecnicos() {
               </div>
             </div>
 
-            <FilterSelect label="Técnico" value={filters.tecnico} placeholder="Todos os técnicos" options={data?.options.tecnicos ?? []} onChange={(value) => updateFilter("tecnico", value)} />
-            <FilterSelect label="Cliente" value={filters.cliente} placeholder="Todos os clientes" options={data?.options.clientes ?? []} onChange={(value) => updateFilter("cliente", value)} />
+            <FilterSelect
+              label="Técnico"
+              value={filters.tecnico}
+              placeholder="Todos os técnicos"
+              options={data?.options.tecnicos ?? []}
+              onChange={(value) => updateFilter("tecnico", value)}
+            />
+            <FilterSelect
+              label="Cliente"
+              value={filters.cliente}
+              placeholder="Todos os clientes"
+              options={data?.options.clientes ?? []}
+              onChange={(value) => updateFilter("cliente", value)}
+            />
 
             <div className="space-y-1.5">
               <Label>Status</Label>
@@ -219,7 +248,9 @@ export function Tecnicos() {
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todos os status</SelectItem>
-                  {(data?.options.situacoes ?? []).map((status) => <SelectItem key={status} value={status}>{status}</SelectItem>)}
+                  {(data?.options.situacoes ?? []).map((status) => (
+                    <SelectItem key={status} value={status}>{status}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -250,9 +281,25 @@ export function Tecnicos() {
           </div>
 
           <div className="flex flex-wrap gap-2">
-            <Button type="button" size="sm" variant={filters.retorno === "sim" ? "default" : "outline"} onClick={() => updateFilter("retorno", filters.retorno === "sim" ? "all" : "sim")}>Somente com retorno</Button>
-            <Button type="button" size="sm" variant={filters.comPecas === "sim" ? "default" : "outline"} onClick={() => updateFilter("comPecas", filters.comPecas === "sim" ? "all" : "sim")}>Somente com peças</Button>
-            <Button type="button" size="sm" variant="ghost" className="gap-2" onClick={resetFilters}><FilterX className="h-4 w-4" /> Limpar filtros</Button>
+            <Button
+              type="button"
+              size="sm"
+              variant={filters.retorno === "sim" ? "default" : "outline"}
+              onClick={() => updateFilter("retorno", filters.retorno === "sim" ? "all" : "sim")}
+            >
+              Somente com retorno
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant={filters.comPecas === "sim" ? "default" : "outline"}
+              onClick={() => updateFilter("comPecas", filters.comPecas === "sim" ? "all" : "sim")}
+            >
+              Somente com peças
+            </Button>
+            <Button type="button" size="sm" variant="ghost" className="gap-2" onClick={resetFilters}>
+              <FilterX className="h-4 w-4" /> Limpar filtros
+            </Button>
           </div>
         </CardContent>
       </Card>
@@ -277,12 +324,24 @@ export function Tecnicos() {
               {isLoading ? (
                 <TableRow><TableCell colSpan={8}><LoadingTable rows={8} /></TableCell></TableRow>
               ) : isError ? (
-                <TableRow><TableCell colSpan={8} className="py-10 text-center text-destructive">{error instanceof Error ? error.message : "Falha ao carregar os dados"}</TableCell></TableRow>
+                <TableRow>
+                  <TableCell colSpan={8} className="py-10 text-center text-destructive">
+                    {error instanceof Error ? error.message : "Falha ao carregar os dados"}
+                  </TableCell>
+                </TableRow>
               ) : !data?.data.length ? (
-                <TableRow><TableCell colSpan={8}><EmptyState title="Nenhum técnico encontrado" description="Ajuste os filtros ou confirme se as chamadas possuem técnico atribuído." /></TableCell></TableRow>
+                <TableRow>
+                  <TableCell colSpan={8}>
+                    <EmptyState title="Nenhum técnico encontrado" description="Ajuste os filtros ou confirme se as chamadas possuem técnico atribuído." />
+                  </TableCell>
+                </TableRow>
               ) : (
                 data.data.map((technician) => (
-                  <TableRow key={technician.tecnico} className={selectedTechnician === technician.tecnico ? "cursor-pointer bg-muted/60" : "cursor-pointer"} onClick={() => setSelectedTechnician(technician.tecnico)}>
+                  <TableRow
+                    key={technician.tecnico}
+                    className={selectedTechnician === technician.tecnico ? "cursor-pointer bg-muted/60" : "cursor-pointer"}
+                    onClick={() => setSelectedTechnician(technician.tecnico)}
+                  >
                     <TableCell className="font-medium">{technician.tecnico}</TableCell>
                     <TableCell className="text-center font-semibold">{technician.atendimentos}</TableCell>
                     <TableCell className="text-center">{technician.clientes}</TableCell>
@@ -293,17 +352,30 @@ export function Tecnicos() {
                         className="rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                         aria-label={`Ver peças usadas por ${technician.tecnico}`}
                         title="Clique para ver quais peças foram usadas e onde"
-                        onClick={(event) => {
-                          event.stopPropagation()
-                          setPartsTechnician(technician)
-                        }}
+                        onClick={(event) => openDetails(event, "parts", technician)}
                       >
-                        <Badge className="cursor-pointer hover:opacity-80" variant={technician.pecasUsadas > 0 ? "default" : "outline"}>{technician.pecasUsadas}</Badge>
+                        <Badge className="cursor-pointer hover:opacity-80" variant={technician.pecasUsadas > 0 ? "default" : "outline"}>
+                          {technician.pecasUsadas}
+                        </Badge>
                       </button>
                     </TableCell>
-                    <TableCell className="text-center"><Badge variant={technician.retornos > 0 ? "destructive" : "outline"}>{technician.retornos}</Badge></TableCell>
+                    <TableCell className="text-center">
+                      <button
+                        type="button"
+                        className="rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                        aria-label={`Ver retornos de ${technician.tecnico}`}
+                        title="Clique para ver quais atendimentos foram retornos"
+                        onClick={(event) => openDetails(event, "returns", technician)}
+                      >
+                        <Badge className="cursor-pointer hover:opacity-80" variant={technician.retornos > 0 ? "destructive" : "outline"}>
+                          {technician.retornos}
+                        </Badge>
+                      </button>
+                    </TableCell>
                     <TableCell className="text-center">{technician.abertos}</TableCell>
-                    <TableCell className="font-mono text-xs">{technician.ultimoAtendimento ? formatDateTime(technician.ultimoAtendimento) : "-"}</TableCell>
+                    <TableCell className="font-mono text-xs">
+                      {technician.ultimoAtendimento ? formatDateTime(technician.ultimoAtendimento) : "-"}
+                    </TableCell>
                   </TableRow>
                 ))
               )}
@@ -316,8 +388,12 @@ export function Tecnicos() {
             <span>Página {data?.page} de {data?.totalPages} · {data?.total} técnicos</span>
             <Pagination className="mx-0 w-auto">
               <PaginationContent>
-                <PaginationItem><PaginationPrevious onClick={() => setPage((current) => Math.max(1, current - 1))} disabled={page <= 1} /></PaginationItem>
-                <PaginationItem><PaginationNext onClick={() => setPage((current) => Math.min(data?.totalPages ?? current, current + 1))} disabled={page >= (data?.totalPages ?? 1)} /></PaginationItem>
+                <PaginationItem>
+                  <PaginationPrevious onClick={() => setPage((current) => Math.max(1, current - 1))} disabled={page <= 1} />
+                </PaginationItem>
+                <PaginationItem>
+                  <PaginationNext onClick={() => setPage((current) => Math.min(data?.totalPages ?? current, current + 1))} disabled={page >= (data?.totalPages ?? 1)} />
+                </PaginationItem>
               </PaginationContent>
             </Pagination>
           </div>
@@ -328,7 +404,9 @@ export function Tecnicos() {
         <Card className="overflow-hidden">
           <CardHeader>
             <CardTitle className="text-base">Histórico detalhado — {selected.tecnico}</CardTitle>
-            <p className="text-sm text-muted-foreground">{selected.atendimentos} atendimentos · {selected.pecasUsadas} peças · {selected.retornos} retornos identificados</p>
+            <p className="text-sm text-muted-foreground">
+              {selected.atendimentos} atendimentos · {selected.pecasUsadas} peças · {selected.retornos} retornos identificados
+            </p>
           </CardHeader>
           <div className="overflow-auto">
             <Table>
@@ -347,12 +425,20 @@ export function Tecnicos() {
                 {selected.servicos.map((service) => (
                   <TableRow key={String(service.codigo)}>
                     <TableCell className="font-mono text-xs">#{service.codigo}</TableCell>
-                    <TableCell><div className="font-medium">{service.cliente || "Cliente não identificado"}</div><div className="text-xs text-muted-foreground">{service.cidade || "Cidade não informada"}</div></TableCell>
-                    <TableCell><div>{[service.marca, service.modelo].filter(Boolean).join(" ") || "Modelo não informado"}</div><div className="font-mono text-xs text-muted-foreground">{service.numeroSerie || "Sem número de série"}</div></TableCell>
+                    <TableCell>
+                      <div className="font-medium">{service.cliente || "Cliente não identificado"}</div>
+                      <div className="text-xs text-muted-foreground">{service.cidade || "Cidade não informada"}</div>
+                    </TableCell>
+                    <TableCell>
+                      <div>{[service.marca, service.modelo].filter(Boolean).join(" ") || "Modelo não informado"}</div>
+                      <div className="font-mono text-xs text-muted-foreground">{service.numeroSerie || "Sem número de série"}</div>
+                    </TableCell>
                     <TableCell><StatusBadge status={service.situacao} /></TableCell>
                     <TableCell className="font-mono text-xs">{service.emissao ? formatDateTime(service.emissao) : "-"}</TableCell>
                     <TableCell><PartsList parts={service.pecas} /></TableCell>
-                    <TableCell className="text-center">{service.retorno ? <Badge variant="destructive">Sim</Badge> : <Badge variant="outline">Não</Badge>}</TableCell>
+                    <TableCell className="text-center">
+                      {service.retorno ? <Badge variant="destructive">Sim</Badge> : <Badge variant="outline">Não</Badge>}
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -361,43 +447,67 @@ export function Tecnicos() {
         </Card>
       )}
 
-      <Dialog open={Boolean(partsTechnician)} onOpenChange={(open) => !open && setPartsTechnician(null)}>
+      <Dialog open={Boolean(details)} onOpenChange={(open) => !open && setDetails(null)}>
         <DialogContent className="max-h-[85vh] max-w-4xl overflow-hidden p-0">
           <DialogHeader className="border-b p-6 pb-4">
-            <DialogTitle>Peças usadas por {partsTechnician?.tecnico}</DialogTitle>
+            <DialogTitle>
+              {details?.mode === "parts" ? "Peças usadas" : "Atendimentos com retorno"} por {details?.technician.tecnico}
+            </DialogTitle>
             <DialogDescription>
-              Veja a peça, a quantidade, a OS, o cliente e o equipamento em que foi aplicada.
+              {details?.mode === "parts"
+                ? "Veja a peça, a quantidade, a OS, o cliente e o equipamento em que foi aplicada."
+                : "Veja quais ordens de serviço exigiram retorno, com cliente, equipamento, datas e peças aplicadas."}
             </DialogDescription>
           </DialogHeader>
 
           <div className="max-h-[68vh] overflow-auto p-6 pt-4">
-            {partsTechnician?.servicos.some((service) => service.pecas.length > 0) ? (
+            {detailServices.length > 0 ? (
               <div className="space-y-4">
-                {partsTechnician.servicos.filter((service) => service.pecas.length > 0).map((service) => (
+                {detailServices.map((service) => (
                   <div key={String(service.codigo)} className="rounded-lg border p-4">
                     <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
                       <div>
                         <p className="font-semibold">OS #{service.codigo} · {service.cliente || "Cliente não identificado"}</p>
                         <p className="text-sm text-muted-foreground">{service.cidade || "Cidade não informada"}</p>
                       </div>
-                      <StatusBadge status={service.situacao} />
+                      <div className="flex items-center gap-2">
+                        {details?.mode === "returns" && <Badge variant="destructive">Retorno</Badge>}
+                        <StatusBadge status={service.situacao} />
+                      </div>
                     </div>
 
                     <div className="mb-3 grid gap-2 text-sm sm:grid-cols-2">
                       <p><span className="font-medium">Equipamento:</span> {[service.marca, service.modelo].filter(Boolean).join(" ") || "Não informado"}</p>
                       <p><span className="font-medium">Número de série:</span> {service.numeroSerie || "Não informado"}</p>
-                      <p><span className="font-medium">Data:</span> {service.emissao ? formatDateTime(service.emissao) : "Não informada"}</p>
-                      <p><span className="font-medium">Total aplicado:</span> {service.pecas.reduce((total, part) => total + part.quantidade, 0)} peça(s)</p>
+                      <p><span className="font-medium">Abertura:</span> {service.emissao ? formatDateTime(service.emissao) : "Não informada"}</p>
+                      <p><span className="font-medium">Encerramento:</span> {service.encerramento ? formatDateTime(service.encerramento) : "Não informado"}</p>
+                      {details?.mode === "parts" && (
+                        <p><span className="font-medium">Total aplicado:</span> {service.pecas.reduce((total, part) => total + part.quantidade, 0)} peça(s)</p>
+                      )}
                     </div>
 
-                    <div className="rounded-md bg-muted/50 p-3">
-                      <PartsList parts={service.pecas} showValue />
-                    </div>
+                    {details?.mode === "parts" ? (
+                      <div className="rounded-md bg-muted/50 p-3">
+                        <PartsList parts={service.pecas} showValue />
+                      </div>
+                    ) : service.pecas.length > 0 ? (
+                      <div className="rounded-md bg-muted/50 p-3">
+                        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Peças usadas neste retorno</p>
+                        <PartsList parts={service.pecas} showValue />
+                      </div>
+                    ) : (
+                      <p className="text-xs text-muted-foreground">Nenhuma peça registrada neste atendimento.</p>
+                    )}
                   </div>
                 ))}
               </div>
             ) : (
-              <EmptyState title="Nenhuma peça registrada" description="Não existem peças vinculadas às ordens de serviço deste técnico." />
+              <EmptyState
+                title={details?.mode === "parts" ? "Nenhuma peça registrada" : "Nenhum retorno identificado"}
+                description={details?.mode === "parts"
+                  ? "Não existem peças vinculadas às ordens de serviço deste técnico."
+                  : "Não existem atendimentos marcados como retorno para este técnico."}
+              />
             )}
           </div>
         </DialogContent>
@@ -407,14 +517,18 @@ export function Tecnicos() {
 }
 
 function PartsList({ parts, showValue = false }: { parts: PecaUsada[]; showValue?: boolean }) {
-  if (!parts.length) return <span className="text-xs text-muted-foreground">Nenhuma peça registrada</span>
+  if (!parts.length) {
+    return <span className="text-xs text-muted-foreground">Nenhuma peça registrada</span>
+  }
 
   return (
     <div className="space-y-1.5">
       {parts.map((part, index) => (
         <div key={`${part.descricao}-${index}`} className="flex flex-wrap items-center justify-between gap-2 text-xs">
           <span><strong>{part.quantidade}×</strong> {part.descricao}</span>
-          {showValue && part.valor > 0 ? <span className="text-muted-foreground">R$ {part.valor.toFixed(2).replace(".", ",")}</span> : null}
+          {showValue && part.valor > 0 ? (
+            <span className="text-muted-foreground">R$ {part.valor.toFixed(2).replace(".", ",")}</span>
+          ) : null}
         </div>
       ))}
     </div>
@@ -425,14 +539,29 @@ function MetricCard({ title, value, icon: Icon }: { title: string; value?: numbe
   return (
     <Card>
       <CardContent className="flex items-center justify-between p-4">
-        <div><p className="text-xs font-medium text-muted-foreground">{title}</p><p className="text-2xl font-bold">{value ?? "-"}</p></div>
+        <div>
+          <p className="text-xs font-medium text-muted-foreground">{title}</p>
+          <p className="text-2xl font-bold">{value ?? "-"}</p>
+        </div>
         <Icon className="h-5 w-5 text-muted-foreground" />
       </CardContent>
     </Card>
   )
 }
 
-function FilterSelect({ label, value, placeholder, options, onChange }: { label: string; value: string; placeholder: string; options: string[]; onChange: (value: string) => void }) {
+function FilterSelect({
+  label,
+  value,
+  placeholder,
+  options,
+  onChange,
+}: {
+  label: string
+  value: string
+  placeholder: string
+  options: string[]
+  onChange: (value: string) => void
+}) {
   return (
     <div className="space-y-1.5">
       <Label>{label}</Label>
