@@ -1,4 +1,5 @@
 import { getMachinesResponse, getTechniciansResponse } from "./operations-analytics"
+import { getPartsLifecycleResponse } from "./parts-lifecycle-analytics"
 
 let installed = false
 
@@ -27,19 +28,21 @@ export function installOperationsAnalyticsAdapter(): void {
   window.fetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
     const url = resolveUrl(input)
     const method = String(init?.method ?? (input instanceof Request ? input.method : "GET")).toUpperCase()
+    const supportedPaths = new Set(["/api/maquinas", "/api/tecnicos", "/api/pecas/ciclo-vida"])
 
     if (
       url &&
       url.origin === window.location.origin &&
       method === "GET" &&
-      (url.pathname === "/api/maquinas" || url.pathname === "/api/tecnicos")
+      supportedPaths.has(url.pathname)
     ) {
       const query = Object.fromEntries(url.searchParams.entries())
 
       try {
-        const data = url.pathname === "/api/maquinas"
-          ? await getMachinesResponse(query)
-          : await getTechniciansResponse(query)
+        let data: unknown
+        if (url.pathname === "/api/maquinas") data = await getMachinesResponse(query)
+        else if (url.pathname === "/api/tecnicos") data = await getTechniciansResponse(query)
+        else data = await getPartsLifecycleResponse(query)
 
         return jsonResponse(data)
       } catch (error) {

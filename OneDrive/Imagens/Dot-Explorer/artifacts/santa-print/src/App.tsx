@@ -7,6 +7,7 @@ import { Shell } from '@/components/layout/Shell';
 import { Dashboard } from '@/pages/Dashboard';
 import { Chamadas } from '@/pages/Chamadas';
 import { Pecas } from '@/pages/Pecas';
+import { CicloVidaPecas } from '@/pages/CicloVidaPecas';
 import { MaquinasClientes } from '@/pages/MaquinasClientes';
 import { Tecnicos } from '@/pages/Tecnicos';
 import { Relatorios } from '@/pages/Relatorios';
@@ -37,6 +38,7 @@ function Router() {
         <Route path="/" component={Dashboard} />
         <Route path="/chamadas" component={Chamadas} />
         <Route path="/pecas" component={Pecas} />
+        <Route path="/ciclo-vida-pecas" component={CicloVidaPecas} />
         <Route path="/maquinas" component={MaquinasClientes} />
         <Route path="/tecnicos" component={Tecnicos} />
         <Route path="/pedidos" component={MaquinasClientes} />
