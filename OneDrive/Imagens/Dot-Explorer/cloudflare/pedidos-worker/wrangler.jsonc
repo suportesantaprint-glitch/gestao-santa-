@@ -9,7 +9,7 @@
   "preview_urls": false,
   "keep_vars": true,
   "vars": {
-    "ALLOWED_ORIGINS": "https://gestao-santa-santa-print.vercel.app,https://gestao-santa-kohl.vercel.app,http://localhost:5173"
+    "ALLOWED_ORIGINS": "https://gestao-santa-santa-print.vercel.app,https://gestao-santa-kohl.vercel.app,https://gestao-santa-git-main-santa-print.vercel.app,http://localhost:5173"
   },
   "secrets": {
     "required": ["SUPABASE_SECRET_KEY"]
