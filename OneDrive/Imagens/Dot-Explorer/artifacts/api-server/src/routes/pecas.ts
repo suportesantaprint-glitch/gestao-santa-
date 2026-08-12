@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import * as XLSX from "xlsx";
+import { buildProfessionalExcel, type ExcelColumn } from "../lib/excel";
 import { supabaseFetch } from "../lib/supabase";
 
 const router: IRouter = Router();
@@ -16,6 +16,21 @@ function buildPecasParams(query: Record<string, string>): URLSearchParams {
 
   return p;
 }
+
+const exportColumns: ExcelColumn[] = [
+  { key: "chamada_number", header: "Nº Chamada", width: 14, type: "integer" },
+  { key: "data_abertura", header: "Data Abertura", width: 20, type: "datetime" },
+  { key: "desc_produto", header: "Produto", width: 38 },
+  { key: "desc_marca", header: "Marca", width: 20 },
+  { key: "modelo_equip", header: "Modelo", width: 24 },
+  { key: "qtdem", header: "Qtd", width: 10, type: "decimal" },
+  { key: "preco_unitario", header: "Preço Unit.", width: 16, type: "currency" },
+  { key: "valor_item", header: "Valor Item", width: 16, type: "currency" },
+  { key: "valor_custo", header: "Custo", width: 16, type: "currency" },
+  { key: "movimentou_estoque", header: "Movimentou Estoque", width: 22 },
+  { key: "defeito_equip", header: "Defeito", width: 42 },
+  { key: "garantia", header: "Garantia", width: 16 },
+];
 
 // GET /api/pecas
 router.get("/pecas", async (req, res): Promise<void> => {
@@ -42,32 +57,16 @@ router.get("/pecas/exportar", async (req, res): Promise<void> => {
 
   const { data } = await supabaseFetch<Record<string, unknown>>("zenthi_pecas", filters);
 
-  const exportColumns = [
-    { key: "chamada_number", header: "Nº Chamada" },
-    { key: "data_abertura", header: "Data Abertura" },
-    { key: "desc_produto", header: "Produto" },
-    { key: "desc_marca", header: "Marca" },
-    { key: "modelo_equip", header: "Modelo" },
-    { key: "qtdem", header: "Qtd" },
-    { key: "preco_unitario", header: "Preço Unit." },
-    { key: "valor_item", header: "Valor Item" },
-    { key: "valor_custo", header: "Custo" },
-    { key: "movimentou_estoque", header: "Movimentou Estoque" },
-    { key: "defeito_equip", header: "Defeito" },
-    { key: "garantia", header: "Garantia" },
-  ];
+  const buf = buildProfessionalExcel({
+    sheetName: "Peças",
+    title: "Relatório de Consumo de Peças",
+    columns: exportColumns,
+    rows: data,
+  });
 
-  const rows = data.map((row) =>
-    Object.fromEntries(exportColumns.map(({ key, header }) => [header, row[key] ?? ""])),
-  );
-
-  const ws = XLSX.utils.json_to_sheet(rows);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "Peças");
-
-  const buf = XLSX.write(wb, { type: "buffer", bookType: "xlsx" });
   res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
   res.setHeader("Content-Disposition", 'attachment; filename="pecas.xlsx"');
+  res.setHeader("Cache-Control", "no-store");
   res.send(buf);
 });
 
