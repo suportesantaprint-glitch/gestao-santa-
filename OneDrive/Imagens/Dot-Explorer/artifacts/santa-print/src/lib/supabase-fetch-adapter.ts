@@ -406,6 +406,12 @@ export function installSupabaseFetchAdapter(): void {
       url.pathname.startsWith("/api/") &&
       method === "GET"
     ) {
+      // Em produção, Pedidos usa uma função serverless real da Vercel. A view
+      // v_coml_pedido_itens não deve depender de acesso público/anon no navegador.
+      if (import.meta.env.PROD && url.pathname === "/api/pedidos") {
+        return nativeFetch(input, init);
+      }
+
       try {
         return await handleApiRequest(url);
       } catch (error) {

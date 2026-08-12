@@ -7,7 +7,7 @@ import { LoadingTable, EmptyState } from "@/components/States"
 import { formatCurrency, formatDate } from "@/lib/format"
 import { usePagination } from "@/hooks/use-pagination"
 import { useFilters } from "@/hooks/use-filters"
-import { Search } from "lucide-react"
+import { AlertTriangle, Search } from "lucide-react"
 import { Pagination, PaginationContent, PaginationItem, PaginationPrevious, PaginationNext } from "@/components/ui/pagination"
 
 export function Pedidos() {
@@ -17,7 +17,7 @@ export function Pedidos() {
     mesAno: ""
   })
 
-  const { data, isLoading } = useListPedidos({
+  const { data, isLoading, isError, error } = useListPedidos({
     page,
     limit,
     ...filters
@@ -60,6 +60,22 @@ export function Pedidos() {
         </CardContent>
       </Card>
 
+      {isError && (
+        <Card className="border-destructive/50 bg-destructive/5 shadow-sm">
+          <CardContent className="flex items-start gap-3 p-4">
+            <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-destructive" aria-hidden="true" />
+            <div className="min-w-0">
+              <p className="font-semibold text-destructive">Não foi possível carregar os pedidos</p>
+              <p className="mt-1 break-words text-sm text-muted-foreground">
+                {error instanceof Error
+                  ? error.message
+                  : "A consulta à base v_coml_pedido_itens falhou. Verifique a configuração do servidor."}
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       <Card className="flex-1 shadow-sm flex flex-col overflow-hidden">
         <div className="overflow-auto flex-1">
           <Table>
@@ -77,6 +93,15 @@ export function Pedidos() {
             <TableBody>
               {isLoading ? (
                 <TableRow><TableCell colSpan={7}><LoadingTable rows={10} /></TableCell></TableRow>
+              ) : isError ? (
+                <TableRow>
+                  <TableCell colSpan={7}>
+                    <EmptyState
+                      title="Pedidos indisponíveis"
+                      description="A consulta ao servidor falhou. O erro detalhado está exibido acima."
+                    />
+                  </TableCell>
+                </TableRow>
               ) : data?.data.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={7}>
@@ -109,7 +134,7 @@ export function Pedidos() {
           </Table>
         </div>
         
-        {totalPages > 1 && (
+        {!isError && totalPages > 1 && (
           <div className="border-t p-4 flex items-center justify-between bg-card text-sm text-muted-foreground">
             <div>
               Página <span className="font-medium text-foreground">{page}</span> de <span className="font-medium text-foreground">{totalPages}</span>
