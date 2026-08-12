@@ -29,10 +29,12 @@ function addFilter(params, key, value, operator) {
   params.append(key, operator === "ilike" ? `ilike.*${normalized}*` : `eq.${normalized}`);
 }
 
-async function queryPedidos(params, key) {
-  const supabaseUrl = requireEnv("SUPABASE_URL", "VITE_SUPABASE_URL").replace(/\/+$/, "");
-  const endpoint = `${supabaseUrl}/rest/v1/${VIEW_NAME}?${params.toString()}`;
+function getSupabaseUrl() {
+  return requireEnv("SUPABASE_URL", "VITE_SUPABASE_URL").replace(/\/+$/, "");
+}
 
+async function queryTable(table, params, key) {
+  const endpoint = `${getSupabaseUrl()}/rest/v1/${table}?${params.toString()}`;
   const response = await fetch(endpoint, {
     headers: {
       apikey: key,
@@ -55,10 +57,7 @@ async function queryPedidos(params, key) {
 
 async function fetchPedidos(params) {
   const secretKey = getEnv("SUPABASE_SECRET_KEY");
-  const publicKey = getEnv(
-    "SUPABASE_PUBLISHABLE_KEY",
-    "VITE_SUPABASE_ANON_KEY",
-  );
+  const publicKey = getEnv("SUPABASE_PUBLISHABLE_KEY", "VITE_SUPABASE_ANON_KEY");
 
   if (!secretKey && !publicKey) {
     throw new Error(
@@ -66,21 +65,41 @@ async function fetchPedidos(params) {
     );
   }
 
-  // Prefere a credencial server-side. Algumas views, porém, são definidas com
-  // regras dependentes do papel anon/authenticated. Nesses casos o service role
-  // pode retornar zero linhas mesmo quando a chave pública enxerga a view.
   if (secretKey) {
-    const result = await queryPedidos(params, secretKey);
+    const result = await queryTable(VIEW_NAME, params, secretKey);
     if (result.data.length > 0 || !publicKey || publicKey === secretKey) {
       return result;
     }
   }
 
   if (publicKey) {
-    return queryPedidos(params, publicKey);
+    return queryTable(VIEW_NAME, params, publicKey);
   }
 
   return { data: [], total: 0 };
+}
+
+async function logSourceDiagnostic(total) {
+  if (total !== 0) return;
+  const secretKey = getEnv("SUPABASE_SECRET_KEY");
+  if (!secretKey) return;
+
+  try {
+    const chamadas = await queryTable(
+      "zenthi_chamadas",
+      new URLSearchParams([["select", "codigo"], ["limit", "1"]]),
+      secretKey,
+    );
+    console.info("Diagnóstico Supabase pedidos", {
+      host: new URL(getSupabaseUrl()).hostname,
+      pedidosTotal: total,
+      chamadasTotal: chamadas.total,
+    });
+  } catch (error) {
+    console.warn("Falha no diagnóstico Supabase pedidos", {
+      message: error instanceof Error ? error.message : "Erro desconhecido",
+    });
+  }
 }
 
 function sendJson(res, statusCode, body) {
@@ -113,6 +132,7 @@ export default async function handler(req, res) {
     params.set("offset", String((page - 1) * limit));
 
     const { data, total } = await fetchPedidos(params);
+    await logSourceDiagnostic(total);
     sendJson(res, 200, { data, total, page, limit });
   } catch (error) {
     console.error("Falha ao carregar pedidos", error);
