@@ -18,15 +18,10 @@ type PedidosResponse = {
   limit: number
 }
 
-const DEFAULT_PEDIDOS_API_URL = "https://gestao-santa.suporte-santaprint.workers.dev"
-
-function getPedidosEndpoint(): string {
-  const baseUrl = String(import.meta.env.VITE_PEDIDOS_API_URL ?? DEFAULT_PEDIDOS_API_URL).trim().replace(/\/+$/, "")
-  return `${baseUrl}/api/pedidos`
-}
+const PEDIDOS_API_URL = "https://gestao-santa.suporte-santaprint.workers.dev/api/pedidos"
 
 async function fetchPedidos(params: { page: number; limit: number; cliente: string; mesAno: string }): Promise<PedidosResponse> {
-  const url = new URL(getPedidosEndpoint())
+  const url = new URL(PEDIDOS_API_URL)
   url.searchParams.set("page", String(params.page))
   url.searchParams.set("limit", String(params.limit))
   if (params.cliente) url.searchParams.set("cliente", params.cliente)
