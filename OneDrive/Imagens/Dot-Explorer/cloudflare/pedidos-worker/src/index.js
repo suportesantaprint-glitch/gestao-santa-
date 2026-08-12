@@ -39,6 +39,22 @@ function addFilter(params, key, value, operator) {
   params.append(key, operator === "ilike" ? `ilike.*${normalized}*` : `eq.${normalized}`);
 }
 
+function buildSupabaseHeaders(apiKey) {
+  const headers = {
+    apikey: apiKey,
+    Accept: "application/json",
+    Prefer: "count=exact",
+  };
+
+  // Chaves legadas service_role/anon são JWTs e aceitam Authorization Bearer.
+  // As chaves atuais sb_secret_*/sb_publishable_* devem ser enviadas via apikey.
+  if (!apiKey.startsWith("sb_secret_") && !apiKey.startsWith("sb_publishable_")) {
+    headers.Authorization = `Bearer ${apiKey}`;
+  }
+
+  return headers;
+}
+
 async function fetchPedidos(requestUrl, env) {
   const page = parsePositiveInteger(requestUrl.searchParams.get("page"), 1);
   const requestedLimit = parsePositiveInteger(requestUrl.searchParams.get("limit"), DEFAULT_LIMIT);
@@ -54,19 +70,14 @@ async function fetchPedidos(requestUrl, env) {
   params.set("offset", String((page - 1) * limit));
 
   const supabaseUrl = String(env.SUPABASE_URL ?? "").replace(/\/+$/, "");
-  const apiKey = String(env.SUPABASE_API_KEY ?? "");
+  const apiKey = String(env.SUPABASE_SECRET_KEY ?? "");
 
   if (!supabaseUrl || !apiKey) {
-    throw new Error("Worker sem SUPABASE_URL ou SUPABASE_API_KEY configurado");
+    throw new Error("Worker sem SUPABASE_URL ou SUPABASE_SECRET_KEY configurado");
   }
 
   const response = await fetch(`${supabaseUrl}/rest/v1/${VIEW_NAME}?${params.toString()}`, {
-    headers: {
-      apikey: apiKey,
-      Authorization: `Bearer ${apiKey}`,
-      Accept: "application/json",
-      Prefer: "count=exact",
-    },
+    headers: buildSupabaseHeaders(apiKey),
   });
 
   if (!response.ok) {
