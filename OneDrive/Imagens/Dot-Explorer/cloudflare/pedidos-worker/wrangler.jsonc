@@ -1,0 +1,16 @@
+{
+  "$schema": "https://raw.githubusercontent.com/cloudflare/workers-sdk/main/packages/wrangler/config-schema.json",
+  "name": "santa-print-pedidos",
+  "main": "src/index.js",
+  "compatibility_date": "2026-08-12",
+  "workers_dev": true,
+  "vars": {
+    "ALLOWED_ORIGINS": "https://gestao-santa-santa-print.vercel.app,https://gestao-santa-kohl.vercel.app,http://localhost:5173"
+  },
+  "secrets": {
+    "required": ["SUPABASE_URL", "SUPABASE_API_KEY"]
+  },
+  "observability": {
+    "enabled": true
+  }
+}
