@@ -16,6 +16,22 @@ function json(body, status = 200, origin = null) {
   return new Response(JSON.stringify(body), { status, headers });
 }
 
+function isProjectVercelOrigin(origin) {
+  try {
+    const url = new URL(origin);
+    if (url.protocol !== "https:") return false;
+
+    const hostname = url.hostname.toLowerCase();
+    return (
+      hostname === "gestao-santa-santa-print.vercel.app" ||
+      hostname === "gestao-santa-kohl.vercel.app" ||
+      (hostname.startsWith("gestao-santa-") && hostname.endsWith("-santa-print.vercel.app"))
+    );
+  } catch {
+    return false;
+  }
+}
+
 function getAllowedOrigin(request, env) {
   const origin = request.headers.get("Origin");
   if (!origin) return null;
@@ -25,7 +41,7 @@ function getAllowedOrigin(request, env) {
     .map((value) => value.trim())
     .filter(Boolean);
 
-  return allowed.includes(origin) ? origin : null;
+  return allowed.includes(origin) || isProjectVercelOrigin(origin) ? origin : null;
 }
 
 function parsePositiveInteger(value, fallback) {
