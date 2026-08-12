@@ -10,13 +10,17 @@ import { Pecas } from '@/pages/Pecas';
 import { CicloVidaPecas } from '@/pages/CicloVidaPecas';
 import { MaquinasClientes } from '@/pages/MaquinasClientes';
 import { Tecnicos } from '@/pages/Tecnicos';
+import { Pedidos } from '@/pages/Pedidos';
+import { Contratos } from '@/pages/Contratos';
 import { Relatorios } from '@/pages/Relatorios';
 
 function NotFound() {
   return (
-    <div className="min-h-[80vh] w-full flex flex-col items-center justify-center gap-2">
-      <h1 className="text-4xl font-bold text-foreground">404</h1>
-      <p className="text-muted-foreground">Página não encontrada.</p>
+    <div className="min-h-[80vh] w-full flex flex-col items-center justify-center gap-3 text-center px-4">
+      <h1 className="text-4xl font-bold text-foreground">Página não encontrada</h1>
+      <p className="text-muted-foreground max-w-md">
+        Este endereço não existe. Use o menu para voltar ao Início ou abrir a área que você precisa.
+      </p>
     </div>
   );
 }
@@ -41,8 +45,8 @@ function Router() {
         <Route path="/ciclo-vida-pecas" component={CicloVidaPecas} />
         <Route path="/maquinas" component={MaquinasClientes} />
         <Route path="/tecnicos" component={Tecnicos} />
-        <Route path="/pedidos" component={MaquinasClientes} />
-        <Route path="/contratos" component={Tecnicos} />
+        <Route path="/pedidos" component={Pedidos} />
+        <Route path="/contratos" component={Contratos} />
         <Route path="/relatorios" component={Relatorios} />
         <Route component={NotFound} />
       </Switch>
