@@ -15,6 +15,8 @@ import {
   X,
 } from "lucide-react"
 
+const SANTA_PRINT_LOGO_URL = "https://santaprint.com.br/wp-content/uploads/logo-santaprint-svg-0.svg"
+
 const navItems = [
   { href: "/", label: "Início", description: "Resumo do que precisa de atenção", icon: LayoutDashboard },
   { href: "/chamadas", label: "Chamadas", description: "Acompanhar atendimentos e OS", icon: Wrench },
@@ -26,6 +28,37 @@ const navItems = [
   { href: "/contratos", label: "Contratos", description: "Consultar contratos de locação", icon: FileText },
   { href: "/relatorios", label: "Relatórios", description: "Analisar resultados da operação", icon: BarChart3 },
 ]
+
+function SantaPrintBrand({ subtitle }: { subtitle: string }) {
+  const [logoFailed, setLogoFailed] = React.useState(false)
+
+  return (
+    <div className="flex min-w-0 items-center gap-3">
+      {logoFailed ? (
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-sidebar-primary text-xs font-bold text-primary-foreground">
+          SP
+        </div>
+      ) : (
+        <div className="flex h-10 max-w-[150px] shrink-0 items-center">
+          <img
+            src={SANTA_PRINT_LOGO_URL}
+            alt="Santa Print"
+            className="max-h-10 w-auto max-w-[150px] object-contain"
+            decoding="async"
+            onError={() => setLogoFailed(true)}
+          />
+        </div>
+      )}
+
+      <div className="min-w-0 leading-tight">
+        {logoFailed && <span className="block font-bold text-sidebar-primary-foreground">Santa Print</span>}
+        <span className="block truncate text-[10px] font-normal uppercase tracking-wider text-sidebar-foreground/50">
+          {subtitle}
+        </span>
+      </div>
+    </div>
+  )
+}
 
 function Navigation({ onNavigate }: { onNavigate?: () => void }) {
   const [location] = useLocation()
@@ -67,15 +100,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
     <div className="flex min-h-screen w-full bg-muted/40">
       <aside className="fixed inset-y-0 left-0 z-20 hidden w-72 flex-col border-r bg-sidebar md:flex">
         <div className="flex h-16 items-center border-b border-sidebar-border px-6">
-          <div className="flex items-center gap-3 font-bold text-sidebar-primary-foreground">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-sidebar-primary text-xs text-primary-foreground">
-              SP
-            </div>
-            <div className="leading-tight">
-              <span className="block">Santa Print</span>
-              <span className="block text-[10px] font-normal uppercase tracking-wider text-sidebar-foreground/50">Gestão Operacional</span>
-            </div>
-          </div>
+          <SantaPrintBrand subtitle="Gestão Operacional" />
         </div>
 
         <div className="border-b border-sidebar-border px-5 py-4">
@@ -109,13 +134,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
             onClick={(event) => event.stopPropagation()}
           >
             <div className="flex h-16 items-center justify-between border-b border-sidebar-border px-5">
-              <div className="flex items-center gap-3 font-bold text-sidebar-primary-foreground">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-sidebar-primary text-xs text-primary-foreground">SP</div>
-                <div className="leading-tight">
-                  <span className="block">Santa Print</span>
-                  <span className="block text-[10px] font-normal uppercase tracking-wider text-sidebar-foreground/50">Menu</span>
-                </div>
-              </div>
+              <SantaPrintBrand subtitle="Menu" />
               <button
                 type="button"
                 aria-label="Fechar menu"
@@ -136,13 +155,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
 
       <div className="flex flex-1 flex-col md:pl-72">
         <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b bg-background px-4 md:hidden">
-          <div className="flex items-center gap-2 font-bold">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-xs text-primary-foreground">SP</div>
-            <div className="leading-tight">
-              <span className="block">Santa Print</span>
-              <span className="block text-[10px] font-normal text-muted-foreground">Gestão Operacional</span>
-            </div>
-          </div>
+          <SantaPrintBrand subtitle="Gestão Operacional" />
           <button
             type="button"
             aria-label="Abrir menu"
