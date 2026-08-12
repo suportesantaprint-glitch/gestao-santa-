@@ -18,11 +18,10 @@ type PedidosResponse = {
   limit: number
 }
 
+const DEFAULT_PEDIDOS_API_URL = "https://gestao-santa.suporte-santaprint.workers.dev"
+
 function getPedidosEndpoint(): string {
-  const baseUrl = String(import.meta.env.VITE_PEDIDOS_API_URL ?? "").trim().replace(/\/+$/, "")
-  if (!baseUrl) {
-    throw new Error("VITE_PEDIDOS_API_URL não configurada. Informe a URL do Worker Cloudflare de pedidos.")
-  }
+  const baseUrl = String(import.meta.env.VITE_PEDIDOS_API_URL ?? DEFAULT_PEDIDOS_API_URL).trim().replace(/\/+$/, "")
   return `${baseUrl}/api/pedidos`
 }
 
