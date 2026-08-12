@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
-import * as XLSX from "xlsx";
-import { supabaseFetch, supabaseCount } from "../lib/supabase";
+import { buildProfessionalExcel, type ExcelColumn } from "../lib/excel";
+import { supabaseFetch } from "../lib/supabase";
 
 const router: IRouter = Router();
 
@@ -24,6 +24,27 @@ function buildChamadasParams(query: Record<string, string>): URLSearchParams {
 
   return p;
 }
+
+const exportColumns: ExcelColumn[] = [
+  { key: "codigo", header: "Código", width: 12, type: "integer" },
+  { key: "emissao", header: "Abertura", width: 20, type: "datetime" },
+  { key: "encerramento", header: "Encerramento", width: 20, type: "datetime" },
+  { key: "situacao_zenthi", header: "Status", width: 18 },
+  { key: "razao_social", header: "Cliente", width: 34 },
+  { key: "cpf_cnpj", header: "CPF/CNPJ", width: 20 },
+  { key: "cidade", header: "Cidade", width: 22 },
+  { key: "email_tecnico", header: "Técnico", width: 30 },
+  { key: "marca", header: "Marca", width: 18 },
+  { key: "modelo", header: "Modelo", width: 24 },
+  { key: "numero_serie", header: "Nº Série", width: 22 },
+  { key: "desc_tipo_equipamento", header: "Tipo Equipamento", width: 24 },
+  { key: "tipo_contrato", header: "Tipo Contrato", width: 20 },
+  { key: "tipo_entrada", header: "Entrada", width: 18 },
+  { key: "defeito_informado", header: "Defeito Informado", width: 42 },
+  { key: "setor", header: "Setor", width: 22 },
+  { key: "data_prevista", header: "Previsão", width: 16, type: "date" },
+  { key: "valor_chamada", header: "Valor", width: 16, type: "currency" },
+];
 
 // GET /api/chamadas
 router.get("/chamadas", async (req, res): Promise<void> => {
@@ -50,38 +71,16 @@ router.get("/chamadas/exportar", async (req, res): Promise<void> => {
 
   const { data } = await supabaseFetch<Record<string, unknown>>("zenthi_chamadas", filters);
 
-  const exportColumns = [
-    { key: "codigo", header: "Código" },
-    { key: "emissao", header: "Abertura" },
-    { key: "encerramento", header: "Encerramento" },
-    { key: "situacao_zenthi", header: "Status" },
-    { key: "razao_social", header: "Cliente" },
-    { key: "cpf_cnpj", header: "CPF/CNPJ" },
-    { key: "cidade", header: "Cidade" },
-    { key: "email_tecnico", header: "Técnico" },
-    { key: "marca", header: "Marca" },
-    { key: "modelo", header: "Modelo" },
-    { key: "numero_serie", header: "Nº Série" },
-    { key: "desc_tipo_equipamento", header: "Tipo Equipamento" },
-    { key: "tipo_contrato", header: "Tipo Contrato" },
-    { key: "tipo_entrada", header: "Entrada" },
-    { key: "defeito_informado", header: "Defeito Informado" },
-    { key: "setor", header: "Setor" },
-    { key: "data_prevista", header: "Previsão" },
-    { key: "valor_chamada", header: "Valor" },
-  ];
+  const buf = buildProfessionalExcel({
+    sheetName: "Chamadas",
+    title: "Relatório de Chamadas de Serviço",
+    columns: exportColumns,
+    rows: data,
+  });
 
-  const rows = data.map((row) =>
-    Object.fromEntries(exportColumns.map(({ key, header }) => [header, row[key] ?? ""])),
-  );
-
-  const ws = XLSX.utils.json_to_sheet(rows);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "Chamadas");
-
-  const buf = XLSX.write(wb, { type: "buffer", bookType: "xlsx" });
   res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
   res.setHeader("Content-Disposition", 'attachment; filename="chamadas.xlsx"');
+  res.setHeader("Cache-Control", "no-store");
   res.send(buf);
 });
 
