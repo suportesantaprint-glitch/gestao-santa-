@@ -79,29 +79,6 @@ async function fetchPedidos(params) {
   return { data: [], total: 0 };
 }
 
-async function logSourceDiagnostic(total) {
-  if (total !== 0) return;
-  const secretKey = getEnv("SUPABASE_SECRET_KEY");
-  if (!secretKey) return;
-
-  try {
-    const chamadas = await queryTable(
-      "zenthi_chamadas",
-      new URLSearchParams([["select", "codigo"], ["limit", "1"]]),
-      secretKey,
-    );
-    console.info("Diagnóstico Supabase pedidos", {
-      host: new URL(getSupabaseUrl()).hostname,
-      pedidosTotal: total,
-      chamadasTotal: chamadas.total,
-    });
-  } catch (error) {
-    console.warn("Falha no diagnóstico Supabase pedidos", {
-      message: error instanceof Error ? error.message : "Erro desconhecido",
-    });
-  }
-}
-
 function sendJson(res, statusCode, body) {
   res.statusCode = statusCode;
   res.setHeader("Content-Type", "application/json; charset=utf-8");
@@ -132,7 +109,6 @@ export default async function handler(req, res) {
     params.set("offset", String((page - 1) * limit));
 
     const { data, total } = await fetchPedidos(params);
-    await logSourceDiagnostic(total);
     sendJson(res, 200, { data, total, page, limit });
   } catch (error) {
     console.error("Falha ao carregar pedidos", error);
