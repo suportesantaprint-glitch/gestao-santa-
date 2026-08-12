@@ -1,9 +1,12 @@
 {
+  // Cloudflare Builds deve usar esta pasta como Root directory,
+  // sem Build command, e executar apenas `npx wrangler deploy`.
   "$schema": "https://raw.githubusercontent.com/cloudflare/workers-sdk/main/packages/wrangler/config-schema.json",
   "name": "gestao-santa",
   "main": "src/index.js",
   "compatibility_date": "2026-08-12",
   "workers_dev": true,
+  "preview_urls": false,
   "keep_vars": true,
   "vars": {
     "ALLOWED_ORIGINS": "https://gestao-santa-santa-print.vercel.app,https://gestao-santa-kohl.vercel.app,http://localhost:5173"
