@@ -2,13 +2,19 @@ const VIEW_NAME = "v_coml_pedido_itens";
 const DEFAULT_LIMIT = 50;
 const MAX_LIMIT = 200;
 
-function requireEnv(name) {
-  const value = process.env[name]?.trim();
-
-  if (!value) {
-    throw new Error(`${name} environment variable is not set`);
+function getEnv(...names) {
+  for (const name of names) {
+    const value = process.env[name]?.trim();
+    if (value) return value;
   }
+  return "";
+}
 
+function requireEnv(...names) {
+  const value = getEnv(...names);
+  if (!value) {
+    throw new Error(`${names.join(" ou ")} environment variable is not set`);
+  }
   return value;
 }
 
@@ -19,21 +25,18 @@ function parsePositiveInteger(value, fallback) {
 
 function addFilter(params, key, value, operator) {
   const normalized = value?.trim();
-
   if (!normalized) return;
-
   params.append(key, operator === "ilike" ? `ilike.*${normalized}*` : `eq.${normalized}`);
 }
 
-async function fetchPedidos(params) {
-  const supabaseUrl = requireEnv("SUPABASE_URL").replace(/\/+$/, "");
-  const secretKey = requireEnv("SUPABASE_SECRET_KEY");
+async function queryPedidos(params, key) {
+  const supabaseUrl = requireEnv("SUPABASE_URL", "VITE_SUPABASE_URL").replace(/\/+$/, "");
   const endpoint = `${supabaseUrl}/rest/v1/${VIEW_NAME}?${params.toString()}`;
 
   const response = await fetch(endpoint, {
     headers: {
-      apikey: secretKey,
-      Authorization: `Bearer ${secretKey}`,
+      apikey: key,
+      Authorization: `Bearer ${key}`,
       Accept: "application/json",
       Prefer: "count=exact",
     },
@@ -47,8 +50,37 @@ async function fetchPedidos(params) {
   const data = await response.json();
   const contentRange = response.headers.get("content-range") ?? "";
   const total = Number.parseInt(contentRange.split("/")[1] ?? "0", 10) || 0;
-
   return { data, total };
+}
+
+async function fetchPedidos(params) {
+  const secretKey = getEnv("SUPABASE_SECRET_KEY");
+  const publicKey = getEnv(
+    "SUPABASE_PUBLISHABLE_KEY",
+    "VITE_SUPABASE_ANON_KEY",
+  );
+
+  if (!secretKey && !publicKey) {
+    throw new Error(
+      "SUPABASE_SECRET_KEY, SUPABASE_PUBLISHABLE_KEY ou VITE_SUPABASE_ANON_KEY não configurada",
+    );
+  }
+
+  // Prefere a credencial server-side. Algumas views, porém, são definidas com
+  // regras dependentes do papel anon/authenticated. Nesses casos o service role
+  // pode retornar zero linhas mesmo quando a chave pública enxerga a view.
+  if (secretKey) {
+    const result = await queryPedidos(params, secretKey);
+    if (result.data.length > 0 || !publicKey || publicKey === secretKey) {
+      return result;
+    }
+  }
+
+  if (publicKey) {
+    return queryPedidos(params, publicKey);
+  }
+
+  return { data: [], total: 0 };
 }
 
 function sendJson(res, statusCode, body) {
@@ -81,11 +113,9 @@ export default async function handler(req, res) {
     params.set("offset", String((page - 1) * limit));
 
     const { data, total } = await fetchPedidos(params);
-
     sendJson(res, 200, { data, total, page, limit });
   } catch (error) {
     console.error("Falha ao carregar pedidos", error);
-
     sendJson(res, 500, {
       error: "Não foi possível carregar os pedidos.",
       detail: error instanceof Error ? error.message : "Erro desconhecido",
