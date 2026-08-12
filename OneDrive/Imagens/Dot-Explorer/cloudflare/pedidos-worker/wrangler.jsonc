@@ -1,6 +1,6 @@
 {
   "$schema": "https://raw.githubusercontent.com/cloudflare/workers-sdk/main/packages/wrangler/config-schema.json",
-  "name": "santa-print-pedidos",
+  "name": "gestao-santa",
   "main": "src/index.js",
   "compatibility_date": "2026-08-12",
   "workers_dev": true,
