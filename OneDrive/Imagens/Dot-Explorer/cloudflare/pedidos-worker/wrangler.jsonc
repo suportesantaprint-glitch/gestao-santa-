@@ -1,4 +1,6 @@
 {
+  // Cloudflare Builds deve usar esta pasta como Root directory,
+  // sem Build command, e executar apenas `npx wrangler deploy`.
   "$schema": "https://raw.githubusercontent.com/cloudflare/workers-sdk/main/packages/wrangler/config-schema.json",
   "name": "gestao-santa",
   "main": "src/index.js",
