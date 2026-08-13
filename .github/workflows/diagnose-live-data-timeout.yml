@@ -1,0 +1,38 @@
+name: Diagnose live data timeout
+
+on:
+  push:
+    branches:
+      - diagnostic/data-source-live
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Check Worker plain health
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --connect-timeout 5 --max-time 15 --fail-with-body --silent --show-error \
+            'https://gestao-santa.suporte-santaprint.workers.dev/healthz'
+          echo
+      - name: Check Worker deep health
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --connect-timeout 5 --max-time 20 --fail-with-body --silent --show-error \
+            'https://gestao-santa.suporte-santaprint.workers.dev/healthz?deep=1'
+          echo
+      - name: Check pedidos sample
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --connect-timeout 5 --max-time 20 --fail-with-body --silent --show-error \
+            'https://gestao-santa.suporte-santaprint.workers.dev/api/pedidos?limit=1'
+          echo
