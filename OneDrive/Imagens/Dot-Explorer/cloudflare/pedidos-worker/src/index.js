@@ -71,6 +71,59 @@ function buildSupabaseHeaders(apiKey) {
   return headers;
 }
 
+function getSupabaseConfiguration(env) {
+  const url = String(env.SUPABASE_URL ?? "").replace(/\/+$/, "");
+  const apiKey = String(env.SUPABASE_SECRET_KEY ?? "");
+
+  if (!url || !apiKey) {
+    throw new Error("Worker sem SUPABASE_URL ou SUPABASE_SECRET_KEY configurado");
+  }
+
+  return { url, apiKey };
+}
+
+function getSupabaseHost(env) {
+  try {
+    const { url } = getSupabaseConfiguration(env);
+    return new URL(url).hostname;
+  } catch {
+    return null;
+  }
+}
+
+async function countSupabaseRows(table, env) {
+  const { url, apiKey } = getSupabaseConfiguration(env);
+  const params = new URLSearchParams({ select: "*", limit: "1" });
+  const response = await fetch(`${url}/rest/v1/${encodeURIComponent(table)}?${params.toString()}`, {
+    headers: buildSupabaseHeaders(apiKey),
+  });
+
+  if (!response.ok) {
+    return { ok: false, status: response.status };
+  }
+
+  const contentRange = response.headers.get("content-range") ?? "";
+  const total = Number.parseInt(contentRange.split("/")[1] ?? "0", 10) || 0;
+  return { ok: true, total };
+}
+
+async function diagnoseSupabase(env) {
+  const [pedidos, chamadas, pecas] = await Promise.all([
+    countSupabaseRows(VIEW_NAME, env),
+    countSupabaseRows("zenthi_chamadas", env),
+    countSupabaseRows("zenthi_pecas", env),
+  ]);
+
+  return {
+    supabaseHost: getSupabaseHost(env),
+    counts: {
+      pedidos,
+      chamadas,
+      pecas,
+    },
+  };
+}
+
 async function fetchPedidos(requestUrl, env) {
   const page = parsePositiveInteger(requestUrl.searchParams.get("page"), 1);
   const requestedLimit = parsePositiveInteger(requestUrl.searchParams.get("limit"), DEFAULT_LIMIT);
@@ -85,13 +138,7 @@ async function fetchPedidos(requestUrl, env) {
   params.set("limit", String(limit));
   params.set("offset", String((page - 1) * limit));
 
-  const supabaseUrl = String(env.SUPABASE_URL ?? "").replace(/\/+$/, "");
-  const apiKey = String(env.SUPABASE_SECRET_KEY ?? "");
-
-  if (!supabaseUrl || !apiKey) {
-    throw new Error("Worker sem SUPABASE_URL ou SUPABASE_SECRET_KEY configurado");
-  }
-
+  const { url: supabaseUrl, apiKey } = getSupabaseConfiguration(env);
   const response = await fetch(`${supabaseUrl}/rest/v1/${VIEW_NAME}?${params.toString()}`, {
     headers: buildSupabaseHeaders(apiKey),
   });
@@ -136,7 +183,26 @@ export default {
     }
 
     if (url.pathname === "/healthz") {
-      return json({ status: "ok", source: "cloudflare", view: VIEW_NAME }, 200, allowedOrigin);
+      const body = { status: "ok", source: "cloudflare", view: VIEW_NAME };
+
+      if (url.searchParams.get("deep") !== "1") {
+        return json(body, 200, allowedOrigin);
+      }
+
+      try {
+        return json({ ...body, diagnostics: await diagnoseSupabase(env) }, 200, allowedOrigin);
+      } catch (error) {
+        return json(
+          {
+            ...body,
+            diagnostics: {
+              error: error instanceof Error ? error.message : "Falha no diagnóstico do Supabase",
+            },
+          },
+          200,
+          allowedOrigin,
+        );
+      }
     }
 
     if (url.pathname !== "/api/pedidos") {
