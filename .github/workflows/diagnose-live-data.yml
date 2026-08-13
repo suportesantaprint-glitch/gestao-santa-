@@ -1,0 +1,26 @@
+name: Diagnose live data
+
+on:
+  push:
+    branches:
+      - diagnostic/data-source-live
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check Cloudflare Worker health
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo '=== healthz deep ==='
+          curl --fail-with-body --silent --show-error \
+            'https://gestao-santa.suporte-santaprint.workers.dev/healthz?deep=1'
+          echo
+          echo '=== pedidos sample ==='
+          curl --fail-with-body --silent --show-error \
+            'https://gestao-santa.suporte-santaprint.workers.dev/api/pedidos?limit=1'
+          echo
