@@ -3,6 +3,7 @@ import { buildProfessionalExcel, type ExcelColumn } from "../lib/excel";
 import { supabaseFetch } from "../lib/supabase";
 
 const router: IRouter = Router();
+const CHAMADAS_SOURCE = "zenthi_chamadas_unicas";
 
 function buildChamadasParams(query: Record<string, string>): URLSearchParams {
   const p = new URLSearchParams();
@@ -57,7 +58,7 @@ router.get("/chamadas", async (req, res): Promise<void> => {
   filters.set("limit", String(limit));
   filters.set("offset", String((page - 1) * limit));
 
-  const { data, total } = await supabaseFetch("zenthi_chamadas", filters);
+  const { data, total } = await supabaseFetch(CHAMADAS_SOURCE, filters);
   res.json({ data, total, page, limit });
 });
 
@@ -69,7 +70,7 @@ router.get("/chamadas/exportar", async (req, res): Promise<void> => {
   filters.set("limit", "10000");
   filters.set("offset", "0");
 
-  const { data } = await supabaseFetch<Record<string, unknown>>("zenthi_chamadas", filters);
+  const { data } = await supabaseFetch<Record<string, unknown>>(CHAMADAS_SOURCE, filters);
 
   const buf = buildProfessionalExcel({
     sheetName: "Chamadas",
@@ -98,7 +99,7 @@ router.get("/chamadas/:codigo", async (req, res): Promise<void> => {
   p.set("codigo", `eq.${codigo}`);
   p.set("limit", "1");
 
-  const { data } = await supabaseFetch("zenthi_chamadas", p);
+  const { data } = await supabaseFetch(CHAMADAS_SOURCE, p);
   if (!data.length) {
     res.status(404).json({ error: "Chamada não encontrada" });
     return;
