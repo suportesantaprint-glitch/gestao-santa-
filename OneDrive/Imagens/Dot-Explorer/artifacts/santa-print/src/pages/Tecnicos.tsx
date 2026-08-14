@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react"
 import { useQuery } from "@tanstack/react-query"
-import { Boxes, FilterX, History, Search, UsersRound, Wrench } from "lucide-react"
+import { Boxes, FileDown, FilterX, History, Printer, Search, UsersRound, Wrench } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -20,6 +20,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { EmptyState, LoadingTable } from "@/components/States"
 import { StatusBadge } from "@/components/StatusBadge"
 import { formatDateTime } from "@/lib/format"
+import { downloadTechnicianReportPdf, printTechnicianReport } from "@/lib/technician-report"
 
 type PecaUsada = {
   descricao: string
@@ -188,6 +189,39 @@ export function Tecnicos() {
   const openDetails = (event: React.MouseEvent<HTMLButtonElement>, mode: DetailMode, technician: TecnicoResumo) => {
     event.stopPropagation()
     setDetails({ mode, technician })
+  }
+
+  const createReportPayload = () => {
+    if (!details) return null
+    return {
+      mode: details.mode,
+      technician: details.technician.tecnico,
+      services: detailServices,
+    }
+  }
+
+  const handleDownloadPdf = () => {
+    const report = createReportPayload()
+    if (!report) return
+
+    try {
+      downloadTechnicianReportPdf(report)
+    } catch (reportError) {
+      console.error("Falha ao gerar PDF do técnico", reportError)
+      window.alert(reportError instanceof Error ? reportError.message : "Não foi possível gerar o PDF")
+    }
+  }
+
+  const handlePrint = () => {
+    const report = createReportPayload()
+    if (!report) return
+
+    try {
+      printTechnicianReport(report)
+    } catch (reportError) {
+      console.error("Falha ao imprimir relatório do técnico", reportError)
+      window.alert(reportError instanceof Error ? reportError.message : "Não foi possível abrir a impressão")
+    }
   }
 
   return (
@@ -449,15 +483,46 @@ export function Tecnicos() {
 
       <Dialog open={Boolean(details)} onOpenChange={(open) => !open && setDetails(null)}>
         <DialogContent className="max-h-[85vh] max-w-4xl overflow-hidden p-0">
-          <DialogHeader className="border-b p-6 pb-4">
-            <DialogTitle>
-              {details?.mode === "parts" ? "Peças usadas" : "Atendimentos com retorno"} por {details?.technician.tecnico}
-            </DialogTitle>
-            <DialogDescription>
-              {details?.mode === "parts"
-                ? "Veja a peça, a quantidade, a OS, o cliente e o equipamento em que foi aplicada."
-                : "Veja quais ordens de serviço exigiram retorno, com cliente, equipamento, datas e peças aplicadas."}
-            </DialogDescription>
+          <DialogHeader className="border-b p-6 pb-4 pr-12">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+              <div className="space-y-1.5">
+                <DialogTitle>
+                  {details?.mode === "parts" ? "Peças usadas" : "Atendimentos com retorno"} por {details?.technician.tecnico}
+                </DialogTitle>
+                <DialogDescription>
+                  {details?.mode === "parts"
+                    ? "Veja a peça, a quantidade, a OS, o cliente e o equipamento em que foi aplicada."
+                    : "Veja quais ordens de serviço exigiram retorno, com cliente, equipamento, datas e peças aplicadas."}
+                </DialogDescription>
+              </div>
+
+              {details && detailServices.length > 0 && (
+                <div className="flex shrink-0 flex-wrap gap-2">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="gap-2"
+                    onClick={handleDownloadPdf}
+                    aria-label={`Baixar relatório em PDF de ${details.technician.tecnico}`}
+                  >
+                    <FileDown className="h-4 w-4" />
+                    Baixar PDF
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="gap-2"
+                    onClick={handlePrint}
+                    aria-label={`Imprimir relatório de ${details.technician.tecnico}`}
+                  >
+                    <Printer className="h-4 w-4" />
+                    Imprimir
+                  </Button>
+                </div>
+              )}
+            </div>
           </DialogHeader>
 
           <div className="max-h-[68vh] overflow-auto p-6 pt-4">
