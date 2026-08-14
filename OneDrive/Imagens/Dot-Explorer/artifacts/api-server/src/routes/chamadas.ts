@@ -3,7 +3,7 @@ import { buildProfessionalExcel, type ExcelColumn } from "../lib/excel";
 import { supabaseFetch } from "../lib/supabase";
 
 const router: IRouter = Router();
-const CHAMADAS_SOURCE = "zenthi_chamadas_unicas";
+const CHAMADAS_SOURCE = "zenthi_chamadas_santa_print";
 
 function buildChamadasParams(query: Record<string, string>): URLSearchParams {
   const p = new URLSearchParams();
