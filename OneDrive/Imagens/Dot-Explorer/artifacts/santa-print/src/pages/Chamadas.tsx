@@ -54,7 +54,10 @@ export function Chamadas() {
     isLoading: isLoadingDetail,
     isError: isDetailError,
   } = useGetChamada(selectedCodigo ?? 0, {
-    query: { enabled: selectedCodigo !== null },
+    query: {
+      enabled: selectedCodigo !== null,
+      queryKey: [`/api/chamadas/${selectedCodigo ?? 0}`],
+    },
   })
 
   const {
@@ -68,7 +71,10 @@ export function Chamadas() {
       limit: 100,
     },
     {
-      query: { enabled: selectedCodigo !== null },
+      query: {
+        enabled: selectedCodigo !== null,
+        queryKey: ["/api/pecas", selectedCodigo ?? 0],
+      },
     },
   )
 
