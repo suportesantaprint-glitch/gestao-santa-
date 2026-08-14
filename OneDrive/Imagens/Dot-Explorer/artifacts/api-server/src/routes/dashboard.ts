@@ -2,6 +2,7 @@ import { Router, type IRouter } from "express";
 import { supabaseCount } from "../lib/supabase";
 
 const router: IRouter = Router();
+const CHAMADAS_SOURCE = "zenthi_chamadas_unicas";
 
 const STATUS_LIST = [
   "Em Análise",
@@ -35,14 +36,14 @@ router.get("/dashboard/resumo", async (req, res): Promise<void> => {
 
   const [total, emAnalise, concluidas, canceladas, aguardandoPeca, paraConserto, hojeAbertas, hojeFechadas] =
     await Promise.all([
-      supabaseCount("zenthi_chamadas", base),
-      supabaseCount("zenthi_chamadas", new URLSearchParams([...base, ["situacao_zenthi", "eq.Em Análise"]])),
-      supabaseCount("zenthi_chamadas", new URLSearchParams([...base, ["situacao_zenthi", "eq.Concluído"]])),
-      supabaseCount("zenthi_chamadas", new URLSearchParams([...base, ["situacao_zenthi", "eq.Cancelado"]])),
-      supabaseCount("zenthi_chamadas", new URLSearchParams([...base, ["situacao_zenthi", "eq.Aguardando Peça"]])),
-      supabaseCount("zenthi_chamadas", new URLSearchParams([...base, ["situacao_zenthi", "eq.Para Conserto"]])),
-      supabaseCount("zenthi_chamadas", new URLSearchParams([["emissao", `gte.${today}`]])),
-      supabaseCount("zenthi_chamadas", new URLSearchParams([["encerramento", `gte.${today}`]])),
+      supabaseCount(CHAMADAS_SOURCE, base),
+      supabaseCount(CHAMADAS_SOURCE, new URLSearchParams([...base, ["situacao_zenthi", "eq.Em Análise"]])),
+      supabaseCount(CHAMADAS_SOURCE, new URLSearchParams([...base, ["situacao_zenthi", "eq.Concluído"]])),
+      supabaseCount(CHAMADAS_SOURCE, new URLSearchParams([...base, ["situacao_zenthi", "eq.Cancelado"]])),
+      supabaseCount(CHAMADAS_SOURCE, new URLSearchParams([...base, ["situacao_zenthi", "eq.Aguardando Peça"]])),
+      supabaseCount(CHAMADAS_SOURCE, new URLSearchParams([...base, ["situacao_zenthi", "eq.Para Conserto"]])),
+      supabaseCount(CHAMADAS_SOURCE, new URLSearchParams([["emissao", `gte.${today}`]])),
+      supabaseCount(CHAMADAS_SOURCE, new URLSearchParams([["encerramento", `gte.${today}`]])),
     ]);
 
   res.json({ total, emAnalise, concluidas, canceladas, aguardandoPeca, paraConserto, hojeAbertas, hojeFechadas });
@@ -55,7 +56,7 @@ router.get("/dashboard/por-status", async (req, res): Promise<void> => {
 
   const counts = await Promise.all(
     STATUS_LIST.map((s) =>
-      supabaseCount("zenthi_chamadas", new URLSearchParams([...base, ["situacao_zenthi", `eq.${s}`]])),
+      supabaseCount(CHAMADAS_SOURCE, new URLSearchParams([...base, ["situacao_zenthi", `eq.${s}`]])),
     ),
   );
 
@@ -70,7 +71,7 @@ router.get("/dashboard/por-equipamento", async (req, res): Promise<void> => {
 
   const counts = await Promise.all(
     EQUIPAMENTO_LIST.map((e) =>
-      supabaseCount("zenthi_chamadas", new URLSearchParams([...base, ["desc_tipo_equipamento", `eq.${e}`]])),
+      supabaseCount(CHAMADAS_SOURCE, new URLSearchParams([...base, ["desc_tipo_equipamento", `eq.${e}`]])),
     ),
   );
 
@@ -85,7 +86,7 @@ router.get("/dashboard/recentes", async (req, res): Promise<void> => {
   p.set("limit", "10");
 
   const { supabaseFetch } = await import("../lib/supabase");
-  const { data } = await supabaseFetch("zenthi_chamadas", p);
+  const { data } = await supabaseFetch(CHAMADAS_SOURCE, p);
   res.json(data);
 });
 
