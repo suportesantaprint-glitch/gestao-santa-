@@ -22,6 +22,7 @@ type WorksheetDefinition = {
 const XML_HEADER = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
 const MAIN_NS = "http://schemas.openxmlformats.org/spreadsheetml/2006/main"
 const REL_NS = "http://schemas.openxmlformats.org/officeDocument/2006/relationships"
+const MAX_EXCEL_CELL_TEXT_LENGTH = 32767
 
 const REPORT_COLUMNS: Record<ReportType, ColumnDefinition[]> = {
   chamadas: [
@@ -241,7 +242,30 @@ function normalizeKey(value: string): string {
 }
 
 function cleanText(value: unknown): string {
-  return String(value ?? "").replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, "").trim()
+  let output = ""
+
+  for (const char of String(value ?? "")) {
+    const code = char.codePointAt(0) ?? 0
+    const isValidXmlCharacter =
+      code === 0x09 ||
+      code === 0x0a ||
+      code === 0x0d ||
+      (code >= 0x20 && code <= 0xd7ff) ||
+      (code >= 0xe000 && code <= 0xfffd) ||
+      (code >= 0x10000 && code <= 0x10ffff)
+
+    if (isValidXmlCharacter) output += char
+  }
+
+  return output.trim()
+}
+
+function truncateExcelText(value: string): string {
+  if (value.length <= MAX_EXCEL_CELL_TEXT_LENGTH) return value
+
+  const truncated = value.slice(0, MAX_EXCEL_CELL_TEXT_LENGTH)
+  const lastCodeUnit = truncated.charCodeAt(truncated.length - 1)
+  return lastCodeUnit >= 0xd800 && lastCodeUnit <= 0xdbff ? truncated.slice(0, -1) : truncated
 }
 
 function createXlsx(sheets: WorksheetDefinition[]): Uint8Array<ArrayBuffer> {
@@ -280,7 +304,7 @@ function sheetXml(sheet: WorksheetDefinition): string {
     rows.push(`<row r="${excelRow}" ht="${height}" customHeight="1">${cells}</row>`)
   })
   const filter = sheet.rows.length ? `<autoFilter ref="A5:${lastColumn}${lastRow}"/>` : ""
-  return `${XML_HEADER}<worksheet xmlns="${MAIN_NS}"><sheetPr><pageSetUpPr fitToPage="1"/></sheetPr><dimension ref="A1:${lastColumn}${lastRow}"/><sheetViews><sheetView workbookViewId="0"><pane ySplit="5" topLeftCell="A6" activePane="bottomLeft" state="frozen"/><selection pane="bottomLeft" activeCell="A6" sqref="A6"/></sheetView></sheetViews><sheetFormatPr defaultRowHeight="20"/><cols>${columns}</cols><sheetData>${rows.join("")}</sheetData><mergeCells count="3"><mergeCell ref="A1:${lastColumn}1"/><mergeCell ref="A2:${lastColumn}2"/><mergeCell ref="A3:${lastColumn}3"/></mergeCells>${filter}<pageMargins left="0.25" right="0.25" top="0.5" bottom="0.5" header="0.2" footer="0.2"/><pageSetup orientation="landscape" fitToWidth="1" fitToHeight="0" paperSize="9"/><headerFooter><oddFooter>&amp;LRelatório Santa Print&amp;RPágina &amp;P de &amp;N</oddFooter></headerFooter></worksheet>`
+  return `${XML_HEADER}<worksheet xmlns="${MAIN_NS}"><sheetPr><pageSetUpPr fitToPage="1"/></sheetPr><dimension ref="A1:${lastColumn}${lastRow}"/><sheetViews><sheetView workbookViewId="0"><pane ySplit="5" topLeftCell="A6" activePane="bottomLeft" state="frozen"/><selection pane="bottomLeft" activeCell="A6" sqref="A6"/></sheetView></sheetViews><sheetFormatPr defaultRowHeight="20"/><cols>${columns}</cols><sheetData>${rows.join("")}</sheetData>${filter}<mergeCells count="3"><mergeCell ref="A1:${lastColumn}1"/><mergeCell ref="A2:${lastColumn}2"/><mergeCell ref="A3:${lastColumn}3"/></mergeCells><pageMargins left="0.25" right="0.25" top="0.5" bottom="0.5" header="0.2" footer="0.2"/><pageSetup orientation="landscape" fitToWidth="1" fitToHeight="0" paperSize="9"/><headerFooter><oddFooter>&amp;LRelatório Santa Print&amp;RPágina &amp;P de &amp;N</oddFooter></headerFooter></worksheet>`
 }
 
 function stylesXml(): string {
@@ -306,7 +330,7 @@ function styleFor(kind: ColumnKind, alternate: boolean): number {
 }
 
 function stringCell(reference: string, value: string, style: number): string {
-  return `<c r="${reference}" s="${style}" t="inlineStr"><is><t xml:space="preserve">${escapeXml(value)}</t></is></c>`
+  return `<c r="${reference}" s="${style}" t="inlineStr"><is><t xml:space="preserve">${escapeXml(truncateExcelText(value))}</t></is></c>`
 }
 
 function valueCell(reference: string, cell: CellValue, style: number): string {
@@ -321,7 +345,15 @@ function columnName(index: number): string {
 }
 
 function escapeXml(value: string): string {
-  return cleanText(value).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&apos;")
+  return cleanText(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&apos;")
+    .replace(/\r/g, "&#13;")
+    .replace(/\n/g, "&#10;")
+    .replace(/\t/g, "&#9;")
 }
 
 function zipStored(files: Array<{ name: string; content: string }>): Uint8Array<ArrayBuffer> {
