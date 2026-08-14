@@ -7,6 +7,9 @@ type PaginatedResult<T> = {
   limit: number;
 };
 
+const CHAMADAS_SOURCE = "zenthi_chamadas_santa_print";
+const PECAS_SOURCE = "zenthi_pecas_santa_print";
+
 const STATUS_LIST = [
   "Em Análise",
   "Concluído",
@@ -169,14 +172,14 @@ async function dashboardResumo(query: Record<string, string>): Promise<unknown> 
     hojeAbertas,
     hojeFechadas,
   ] = await Promise.all([
-    countTable("zenthi_chamadas", base),
-    countTable("zenthi_chamadas", withStatus("Em Análise")),
-    countTable("zenthi_chamadas", withStatus("Concluído")),
-    countTable("zenthi_chamadas", withStatus("Cancelado")),
-    countTable("zenthi_chamadas", withStatus("Aguardando Peça")),
-    countTable("zenthi_chamadas", withStatus("Para Conserto")),
-    countTable("zenthi_chamadas", new URLSearchParams([["emissao", `gte.${today}`]])),
-    countTable("zenthi_chamadas", new URLSearchParams([["encerramento", `gte.${today}`]])),
+    countTable(CHAMADAS_SOURCE, base),
+    countTable(CHAMADAS_SOURCE, withStatus("Em Análise")),
+    countTable(CHAMADAS_SOURCE, withStatus("Concluído")),
+    countTable(CHAMADAS_SOURCE, withStatus("Cancelado")),
+    countTable(CHAMADAS_SOURCE, withStatus("Aguardando Peça")),
+    countTable(CHAMADAS_SOURCE, withStatus("Para Conserto")),
+    countTable(CHAMADAS_SOURCE, new URLSearchParams([["emissao", `gte.${today}`]])),
+    countTable(CHAMADAS_SOURCE, new URLSearchParams([["encerramento", `gte.${today}`]])),
   ]);
 
   return {
@@ -196,7 +199,7 @@ async function dashboardStatus(query: Record<string, string>): Promise<unknown> 
   const counts = await Promise.all(
     STATUS_LIST.map((status) =>
       countTable(
-        "zenthi_chamadas",
+        CHAMADAS_SOURCE,
         new URLSearchParams([...base, ["situacao_zenthi", `eq.${status}`]]),
       ),
     ),
@@ -209,7 +212,7 @@ async function dashboardEquipment(query: Record<string, string>): Promise<unknow
   const counts = await Promise.all(
     EQUIPMENT_LIST.map((equipment) =>
       countTable(
-        "zenthi_chamadas",
+        CHAMADAS_SOURCE,
         new URLSearchParams([
           ...base,
           ["desc_tipo_equipamento", `eq.${equipment}`],
@@ -229,7 +232,7 @@ async function listChamadas(query: Record<string, string>): Promise<PaginatedRes
   params.set("order", "emissao.desc");
   params.set("limit", String(limit));
   params.set("offset", String((page - 1) * limit));
-  const { data, total } = await queryTable("zenthi_chamadas", params);
+  const { data, total } = await queryTable(CHAMADAS_SOURCE, params);
   return { data, total, page, limit };
 }
 
@@ -239,13 +242,14 @@ async function listPecas(query: Record<string, string>): Promise<PaginatedResult
   params.set("order", "data_abertura.desc");
   params.set("limit", String(limit));
   params.set("offset", String((page - 1) * limit));
-  const { data, total } = await queryTable("zenthi_pecas", params);
+  const { data, total } = await queryTable(PECAS_SOURCE, params);
   return { data, total, page, limit };
 }
 
 async function listPedidos(query: Record<string, string>): Promise<PaginatedResult<unknown>> {
   const { page, limit } = pagination(query);
   const params = new URLSearchParams();
+  params.set("empresa", "eq.1");
   addParam(params, "mes_ano", query.mesAno ? `eq.${query.mesAno}` : undefined);
   addParam(params, "nome_cliente", query.cliente ? `ilike.*${query.cliente}*` : undefined);
   addParam(
@@ -264,6 +268,8 @@ async function listPedidos(query: Record<string, string>): Promise<PaginatedResu
 async function listContratos(query: Record<string, string>): Promise<PaginatedResult<unknown>> {
   const { page, limit } = pagination(query);
   const params = new URLSearchParams();
+  params.set("empresa", "eq.1");
+  params.set("filial", "eq.2");
   addParam(params, "tipo_contrato", query.tipoContrato ? `eq.${query.tipoContrato}` : undefined);
   params.set("limit", String(limit));
   params.set("offset", String((page - 1) * limit));
@@ -274,7 +280,7 @@ async function listContratos(query: Record<string, string>): Promise<PaginatedRe
 async function filtrosOpcoes(): Promise<unknown> {
   const [marcasResult, cidadesResult, tecnicosResult] = await Promise.all([
     queryTable<{ marca: string }>(
-      "zenthi_chamadas",
+      CHAMADAS_SOURCE,
       new URLSearchParams([
         ["select", "marca"],
         ["order", "marca.asc"],
@@ -282,7 +288,7 @@ async function filtrosOpcoes(): Promise<unknown> {
       ]),
     ),
     queryTable<{ cidade: string }>(
-      "zenthi_chamadas",
+      CHAMADAS_SOURCE,
       new URLSearchParams([
         ["select", "cidade"],
         ["order", "cidade.asc"],
@@ -290,7 +296,7 @@ async function filtrosOpcoes(): Promise<unknown> {
       ]),
     ),
     queryTable<{ email_tecnico: string }>(
-      "zenthi_chamadas",
+      CHAMADAS_SOURCE,
       new URLSearchParams([
         ["select", "email_tecnico"],
         ["order", "email_tecnico.asc"],
@@ -345,7 +351,7 @@ async function handleApiRequest(url: URL): Promise<Response> {
       ["order", "emissao.desc"],
       ["limit", "10"],
     ]);
-    return jsonResponse((await queryTable("zenthi_chamadas", params)).data);
+    return jsonResponse((await queryTable(CHAMADAS_SOURCE, params)).data);
   }
   if (path === "filtros/opcoes") return jsonResponse(await filtrosOpcoes());
 
@@ -354,7 +360,7 @@ async function handleApiRequest(url: URL): Promise<Response> {
     params.set("order", "emissao.desc");
     params.set("limit", "10000");
     return csvResponse(
-      (await queryTable<Record<string, unknown>>("zenthi_chamadas", params)).data,
+      (await queryTable<Record<string, unknown>>(CHAMADAS_SOURCE, params)).data,
     );
   }
   if (path === "chamadas") return jsonResponse(await listChamadas(query));
@@ -365,7 +371,7 @@ async function handleApiRequest(url: URL): Promise<Response> {
       ["codigo", `eq.${codigo}`],
       ["limit", "1"],
     ]);
-    const data = (await queryTable("zenthi_chamadas", params)).data;
+    const data = (await queryTable(CHAMADAS_SOURCE, params)).data;
     return data.length ? jsonResponse(data[0]) : jsonResponse({ error: "Chamada não encontrada" }, 404);
   }
 
@@ -373,7 +379,7 @@ async function handleApiRequest(url: URL): Promise<Response> {
     const params = pecasFilters(query);
     params.set("order", "data_abertura.desc");
     params.set("limit", "5000");
-    return csvResponse((await queryTable<Record<string, unknown>>("zenthi_pecas", params)).data);
+    return csvResponse((await queryTable<Record<string, unknown>>(PECAS_SOURCE, params)).data);
   }
   if (path === "pecas") return jsonResponse(await listPecas(query));
   if (path === "pedidos") return jsonResponse(await listPedidos(query));
