@@ -11,7 +11,6 @@ import { CicloVidaPecas } from '@/pages/CicloVidaPecas';
 import { MaquinasClientes } from '@/pages/MaquinasClientes';
 import { Tecnicos } from '@/pages/Tecnicos';
 import { Pedidos } from '@/pages/Pedidos';
-import { Contratos } from '@/pages/Contratos';
 import { Relatorios } from '@/pages/Relatorios';
 
 function NotFound() {
@@ -49,7 +48,6 @@ function Router() {
         <Route path="/maquinas" component={MaquinasClientes} />
         <Route path="/tecnicos" component={Tecnicos} />
         <Route path="/pedidos" component={Pedidos} />
-        <Route path="/contratos" component={Contratos} />
         <Route path="/relatorios" component={Relatorios} />
         <Route component={NotFound} />
       </Switch>
