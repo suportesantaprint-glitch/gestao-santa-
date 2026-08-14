@@ -2,7 +2,7 @@ import { Router, type IRouter } from "express";
 import { supabaseFetch } from "../lib/supabase";
 
 const router: IRouter = Router();
-const CHAMADAS_SOURCE = "zenthi_chamadas_unicas";
+const CHAMADAS_SOURCE = "zenthi_chamadas_santa_print";
 
 let cachedOpcoes: unknown = null;
 let cacheExpiry = 0;
