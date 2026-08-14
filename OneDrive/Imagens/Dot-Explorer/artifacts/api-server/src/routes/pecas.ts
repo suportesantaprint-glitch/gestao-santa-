@@ -3,6 +3,7 @@ import { buildProfessionalExcel, type ExcelColumn } from "../lib/excel";
 import { supabaseFetch } from "../lib/supabase";
 
 const router: IRouter = Router();
+const PECAS_SOURCE = "zenthi_pecas_santa_print";
 
 function buildPecasParams(query: Record<string, string>): URLSearchParams {
   const p = new URLSearchParams();
@@ -43,7 +44,7 @@ router.get("/pecas", async (req, res): Promise<void> => {
   filters.set("limit", String(limit));
   filters.set("offset", String((page - 1) * limit));
 
-  const { data, total } = await supabaseFetch("zenthi_pecas", filters);
+  const { data, total } = await supabaseFetch(PECAS_SOURCE, filters);
   res.json({ data, total, page, limit });
 });
 
@@ -55,7 +56,7 @@ router.get("/pecas/exportar", async (req, res): Promise<void> => {
   filters.set("limit", "5000");
   filters.set("offset", "0");
 
-  const { data } = await supabaseFetch<Record<string, unknown>>("zenthi_pecas", filters);
+  const { data } = await supabaseFetch<Record<string, unknown>>(PECAS_SOURCE, filters);
 
   const buf = buildProfessionalExcel({
     sheetName: "Peças",

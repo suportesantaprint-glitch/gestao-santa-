@@ -34,7 +34,6 @@ type PartLifecycleRecord = {
 
 const CACHE_TTL_MS = 5 * 60 * 1000
 const PAGE_SIZE = 1000
-const MAX_ROWS = 50000
 
 let lifecyclePromise: Promise<{ chamadas: DatabaseRow[]; pecas: DatabaseRow[] }> | null = null
 let lifecycleExpiresAt = 0
@@ -90,8 +89,9 @@ function getConfiguration(): { url: string; key: string } {
 async function queryAll(table: string, select: string): Promise<DatabaseRow[]> {
   const { url, key } = getConfiguration()
   const rows: DatabaseRow[] = []
+  let offset = 0
 
-  for (let offset = 0; offset < MAX_ROWS; offset += PAGE_SIZE) {
+  while (true) {
     const params = new URLSearchParams({
       select,
       limit: String(PAGE_SIZE),
@@ -118,6 +118,7 @@ async function queryAll(table: string, select: string): Promise<DatabaseRow[]> {
     const range = response.headers.get("content-range") ?? ""
     const total = Number.parseInt(range.split("/")[1] ?? "0", 10) || 0
     if (batch.length < PAGE_SIZE || (total > 0 && rows.length >= total)) break
+    offset += PAGE_SIZE
   }
 
   return rows
@@ -130,11 +131,11 @@ async function loadLifecycleData(): Promise<{ chamadas: DatabaseRow[]; pecas: Da
   lifecycleExpiresAt = now + CACHE_TTL_MS
   lifecyclePromise = Promise.all([
     queryAll(
-      "zenthi_chamadas",
+      "zenthi_chamadas_santa_print",
       "codigo,emissao,encerramento,situacao_zenthi,razao_social,cpf_cnpj,cidade,email_tecnico,marca,modelo,numero_serie,desc_tipo_equipamento,tipo_contrato",
     ),
     queryAll(
-      "zenthi_pecas",
+      "zenthi_pecas_santa_print",
       "id_sales_peca,chamada_number,data_abertura,data_encerramento,desc_produto,desc_marca,qtdem,valor_item,movimentou_estoque",
     ),
   ]).then(([chamadas, pecas]) => ({ chamadas, pecas }))

@@ -59,7 +59,6 @@ type TecnicoResumo = {
 
 const CACHE_TTL_MS = 5 * 60 * 1000
 const PAGE_SIZE = 1000
-const MAX_ROWS = 30000
 
 let operationsPromise: Promise<OperationsData> | null = null
 let operationsExpiresAt = 0
@@ -110,8 +109,9 @@ function getConfiguration(): { url: string; key: string } {
 async function queryAll(table: string, select: string): Promise<DatabaseRow[]> {
   const { url, key } = getConfiguration()
   const rows: DatabaseRow[] = []
+  let offset = 0
 
-  for (let offset = 0; offset < MAX_ROWS; offset += PAGE_SIZE) {
+  while (true) {
     const params = new URLSearchParams({
       select,
       limit: String(PAGE_SIZE),
@@ -139,6 +139,7 @@ async function queryAll(table: string, select: string): Promise<DatabaseRow[]> {
     const total = Number.parseInt(range.split("/")[1] ?? "0", 10) || 0
 
     if (batch.length < PAGE_SIZE || (total > 0 && rows.length >= total)) break
+    offset += PAGE_SIZE
   }
 
   return rows
@@ -151,11 +152,11 @@ async function loadOperationsData(): Promise<OperationsData> {
   operationsExpiresAt = now + CACHE_TTL_MS
   operationsPromise = Promise.all([
     queryAll(
-      "zenthi_chamadas",
+      "zenthi_chamadas_santa_print",
       "codigo,emissao,encerramento,situacao_zenthi,razao_social,cpf_cnpj,cidade,email_tecnico,marca,modelo,numero_serie,desc_tipo_equipamento,tipo_contrato",
     ),
     queryAll(
-      "zenthi_pecas",
+      "zenthi_pecas_santa_print",
       "chamada_number,desc_produto,qtdem,valor_item",
     ),
   ]).then(([chamadas, pecas]) => ({ chamadas, pecas }))
