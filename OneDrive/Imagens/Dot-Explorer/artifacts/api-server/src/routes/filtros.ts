@@ -2,6 +2,7 @@ import { Router, type IRouter } from "express";
 import { supabaseFetch } from "../lib/supabase";
 
 const router: IRouter = Router();
+const CHAMADAS_SOURCE = "zenthi_chamadas_unicas";
 
 let cachedOpcoes: unknown = null;
 let cacheExpiry = 0;
@@ -17,15 +18,15 @@ router.get("/filtros/opcoes", async (req, res): Promise<void> => {
   // Fetch unique values for dynamic filters in parallel
   const [marcasRes, cidadesRes, tecnicosRes] = await Promise.all([
     supabaseFetch<{ marca: string }>(
-      "zenthi_chamadas",
+      CHAMADAS_SOURCE,
       new URLSearchParams([["select", "marca"], ["order", "marca.asc"], ["limit", "500"]]),
     ),
     supabaseFetch<{ cidade: string }>(
-      "zenthi_chamadas",
+      CHAMADAS_SOURCE,
       new URLSearchParams([["select", "cidade"], ["order", "cidade.asc"], ["limit", "500"]]),
     ),
     supabaseFetch<{ email_tecnico: string }>(
-      "zenthi_chamadas",
+      CHAMADAS_SOURCE,
       new URLSearchParams([["select", "email_tecnico"], ["order", "email_tecnico.asc"], ["limit", "500"]]),
     ),
   ]);
