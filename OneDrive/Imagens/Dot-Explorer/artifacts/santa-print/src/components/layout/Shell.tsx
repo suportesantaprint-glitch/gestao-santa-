@@ -10,7 +10,6 @@ import {
   UsersRound,
   BarChart3,
   ShoppingCart,
-  FileText,
   Menu,
   X,
 } from "lucide-react"
@@ -25,7 +24,6 @@ const navItems = [
   { href: "/maquinas", label: "Máquinas por Cliente", description: "Consultar equipamentos instalados", icon: Building2 },
   { href: "/tecnicos", label: "Técnicos", description: "Ver equipe e atendimentos", icon: UsersRound },
   { href: "/pedidos", label: "Pedidos", description: "Consultar vendas e pedidos", icon: ShoppingCart },
-  { href: "/contratos", label: "Contratos", description: "Consultar contratos de locação", icon: FileText },
   { href: "/relatorios", label: "Relatórios", description: "Analisar resultados da operação", icon: BarChart3 },
 ]
 
