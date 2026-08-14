@@ -28,9 +28,12 @@ function NotFound() {
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      refetchOnWindowFocus: false,
-      retry: 1,
-      staleTime: 5 * 60 * 1000,
+      refetchOnWindowFocus: true,
+      refetchOnReconnect: true,
+      refetchInterval: 60 * 1000,
+      refetchIntervalInBackground: false,
+      retry: 2,
+      staleTime: 30 * 1000,
     },
   },
 });
