@@ -1,0 +1,1 @@
+- [Supabase views and RLS](supabase-views-rls.md) — browser-readable views also need grants and compatible RLS policies on their underlying relations.

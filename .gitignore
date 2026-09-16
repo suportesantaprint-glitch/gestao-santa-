@@ -1,0 +1,14 @@
+cat > .gitignore <<'EOF'
+node_modules/
+.env
+.env.*
+!.env.example
+dist/
+build/
+.next/
+.vite/
+coverage/
+*.log
+.DS_Store
+Thumbs.db
+EOF
