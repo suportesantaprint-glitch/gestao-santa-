@@ -95,12 +95,15 @@ function uniqueSorted(values: string[]): string[] {
   return [...new Set(values.filter(Boolean))].sort((a, b) => a.localeCompare(b, "pt-BR"))
 }
 
+const DEFAULT_SUPABASE_URL = "https://vjftsovanievoxilfrkc.supabase.co"
+const DEFAULT_SUPABASE_PUBLISHABLE_KEY = "sb_publishable_RfoJqNZoOlV4vEja3SuJDg_o_b_j-sex"
+
 function getConfiguration(): { url: string; key: string } {
-  const url = String(import.meta.env.VITE_SUPABASE_URL ?? "").replace(/\/+$/, "")
-  const key = String(import.meta.env.VITE_SUPABASE_ANON_KEY ?? "")
+  const url = String(import.meta.env.VITE_SUPABASE_URL ?? DEFAULT_SUPABASE_URL).replace(/\/+$/, "")
+  const key = String(import.meta.env.VITE_SUPABASE_ANON_KEY ?? DEFAULT_SUPABASE_PUBLISHABLE_KEY)
 
   if (!url || !key) {
-    throw new Error("Supabase não configurado na Vercel")
+    throw new Error("Supabase não configurado")
   }
 
   return { url, key }
@@ -152,11 +155,11 @@ async function loadOperationsData(): Promise<OperationsData> {
   operationsExpiresAt = now + CACHE_TTL_MS
   operationsPromise = Promise.all([
     queryAll(
-      "zenthi_chamadas_santa_print",
+      "zenthi_chamadas",
       "codigo,emissao,encerramento,situacao_zenthi,razao_social,cpf_cnpj,cidade,email_tecnico,marca,modelo,numero_serie,desc_tipo_equipamento,tipo_contrato",
     ),
     queryAll(
-      "zenthi_pecas_santa_print",
+      "zenthi_pecas",
       "chamada_number,desc_produto,qtdem,valor_item",
     ),
   ]).then(([chamadas, pecas]) => ({ chamadas, pecas }))
