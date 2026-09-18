@@ -7,8 +7,8 @@ type PaginatedResult<T> = {
   limit: number;
 };
 
-const CHAMADAS_SOURCE = "zenthi_chamadas_santa_print";
-const PECAS_SOURCE = "zenthi_pecas_santa_print";
+const CHAMADAS_SOURCE = "zenthi_chamadas";
+const PECAS_SOURCE = "zenthi_pecas";
 
 const STATUS_LIST = [
   "Em Análise",
@@ -29,14 +29,22 @@ const EQUIPMENT_LIST = [
 let originalFetch: typeof window.fetch | null = null;
 let installed = false;
 
+const DEFAULT_SUPABASE_URL = "https://vjftsovanievoxilfrkc.supabase.co";
+const DEFAULT_SUPABASE_PUBLISHABLE_KEY =
+  "sb_publishable_RfoJqNZoOlV4vEja3SuJDg_o_bJ-sex";
+
 function getConfiguration(): { url: string; key: string } {
-  const url = String(import.meta.env.VITE_SUPABASE_URL ?? "").replace(/\/+$/, "");
-  const key = String(import.meta.env.VITE_SUPABASE_ANON_KEY ?? "");
+  const url = String(
+    import.meta.env.VITE_SUPABASE_URL ?? DEFAULT_SUPABASE_URL,
+  ).replace(/\/+$/, "");
+  const key = String(
+    import.meta.env.VITE_SUPABASE_ANON_KEY ??
+      DEFAULT_SUPABASE_PUBLISHABLE_KEY,
+  );
 
   if (!url || !key) {
     throw new Error(
-      "Supabase não configurado. Defina SUPABASE_URL e SUPABASE_PUBLISHABLE_KEY " +
-        "(ou VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY) na Vercel.",
+      "Supabase não configurado. Defina VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY na Vercel.",
     );
   }
 
