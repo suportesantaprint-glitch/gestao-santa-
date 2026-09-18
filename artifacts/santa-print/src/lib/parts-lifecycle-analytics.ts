@@ -76,7 +76,7 @@ function uniqueSorted(values: string[]): string[] {
 }
 
 const DEFAULT_SUPABASE_URL = "https://vjftsovanievoxilfrkc.supabase.co"
-const DEFAULT_SUPABASE_PUBLISHABLE_KEY = "sb_publishable_RfoJqNZoOlV4vEja3SuJDg_o_b_j-sex"
+const DEFAULT_SUPABASE_PUBLISHABLE_KEY = "sb_publishable_RfoJqNZoOlV4vEja3SuJDg_o_bJ-sex"
 
 function getConfiguration(): { url: string; key: string } {
   const url = String(import.meta.env.VITE_SUPABASE_URL ?? DEFAULT_SUPABASE_URL).replace(/\/+$/, "")
